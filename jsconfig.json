@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
+    "baseUrl": ".", // Sets the base path for resolving non-relative module names
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"] // Maps the @ alias to the src directory
     }
   }
 }
