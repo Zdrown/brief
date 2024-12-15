@@ -96,7 +96,7 @@ business
      1 maybe edgy maybe not great joke 
 
  */"use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import styled from "styled-components";
 import LocalStorageHelper from "../../../utils/localStorageHelper";
 

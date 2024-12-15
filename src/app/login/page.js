@@ -1,1 +1,2 @@
-// entry point for the application 
+// TODO: Implement this file
+export default () => null;
