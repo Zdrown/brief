@@ -1,6 +1,6 @@
 "use client";
 import styled from 'styled-components';// entry point of the application (homepage)
-
+import { useRouter } from 'next/navigation';
 
 const HomePageContainer = styled.div`
   padding: 2rem;
@@ -43,7 +43,28 @@ const CallToAction = styled.button`
   }
 `;
 
+const VideoBackground = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 50vh; /* Adjust to control banner height */
+  overflow: hidden;
+  z-index: -1;
+
+  video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Ensures the video covers the container */
+  }
+`;
+
 export default function HomePage() {
+  const router = useRouter();
+
+  const handleNavigation = () => {
+    router.push('/Categories'); // Navigate to the Categories page
+  }; 
   return (
     <HomePageContainer>
       <Title>Welcome to brief.</Title>
@@ -51,7 +72,7 @@ export default function HomePage() {
         brief. is your go-to application for concise and personalized updates. Get your daily briefings, manage categories, and stay informed effortlessly.
       </Description>
       
-      <CallToAction onClick={() => alert('Get Started!')}>
+      <CallToAction onClick={handleNavigation}>
         Get Started
       </CallToAction>
     </HomePageContainer>

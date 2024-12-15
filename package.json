@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@agentic/core": "^7.2.0",
+    "@agentic/perigon": "^7.2.0",
     "@agentic/stdlib": "^7.2.0",
     "next": "15.0.2",
     "next-auth": "^4.24.10",
