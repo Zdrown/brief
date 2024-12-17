@@ -154,6 +154,15 @@ const ActionButton = styled.button`
 
 // Title of each category
 const SectionTitle = styled.h2`
+  font-size: 1.8rem;
+  color: ${({ theme }) => theme.backgrounds.secondary};
+  margin-bottom: 1rem;
+  text-transform: capitalize;
+  border-bottom: 2px solid ${({ theme }) => theme.colors.darkBlue};
+  padding-bottom: 0.5rem;
+`;
+
+const SectionTitle2 = styled.h2`
   font-size: 1.6rem;
   color: ${({ theme }) => theme.backgrounds.secondary};
   margin-bottom: 1rem;
@@ -161,6 +170,7 @@ const SectionTitle = styled.h2`
   border-bottom: 2px solid ${({ theme }) => theme.colors.darkBlue};
   padding-bottom: 0.5rem;
 `;
+
 
 // Summaries text styling
 const Summary = styled.p`
@@ -175,23 +185,34 @@ const FeedItems = styled.ul`
   list-style: none;
   margin: 0;
   padding: 0;
+  
+  /* Use a responsive grid layout */
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem; /* spacing between cards */
 `;
 
 // Individual feed item styling (cards)
 const FeedItem = styled.li`
-  margin: 1rem 0;
-  padding: 1.2rem;
+  padding: 1rem;
   background-color: ${({ theme }) => theme.backgrounds.secondary};
-  border-radius: 6px;
-  box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.08);
+  border-radius: 12px; /* more rounded corners */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* softer shadow for a cleaner look */
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   animation: ${fadeInUp} 0.4s ease both;
 
   &:hover {
     background-color: ${({ theme }) => theme.colors.tan};
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
   }
-  }
+
+  /* Make sure the card doesn't get too large */
+  max-width: 100%; 
+  overflow: hidden;
 `;
+
+
 
 // Title of each item
 const FeedItemTitle = styled.h3`
@@ -402,8 +423,9 @@ export default function FetchingPage() {
           <CategorySection key={category}>
             <SectionTitle>{capitalizeAllWords(category)}</SectionTitle>
             <Summary>{summary}</Summary>
-
+            <SectionTitle2>Read The Full Article</SectionTitle2>
             {items && items.length > 0 && (
+            
               <FeedItems>
                 {items.map((feedItem) => {
                   const itemKey = feedItem.link || feedItem.title;

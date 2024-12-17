@@ -6,43 +6,40 @@ import RSSParser from "rss-parser";
 // Ensure you set OPENAI_API_KEY in your environment (e.g., .env file).
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-class RequestQueue {
-  constructor() {
-    this.queue = [];
-    this.processing = false;
-  }
+/**
+ * Helper function to safely fetch and parse a single RSS feed without rejecting.
+ * Returns an array of items or an empty array if an error occurs.
+ */
+async function fetchSingleFeedSafe(url, parser, MAX_ITEMS_TOTAL, MAX_ITEMS_PER_FEED) {
+  try {
+    console.log(`Parsing RSS feed: ${url}`);
+    const feed = await parser.parseURL(url);
 
- 
+    const items = [];
+    let itemsFromThisFeed = 0;
 
-  async add(fn) {
-    return new Promise((resolve, reject) => {
-      this.queue.push({ fn, resolve, reject });
-      if (!this.processing) {
-        this.processNext();
-      }
-    });
-  }
+    for (const item of feed.items) {
+      // We only enforce per-feed limit here. Total limit will be applied after merging.
+      if (itemsFromThisFeed >= MAX_ITEMS_PER_FEED) break;
 
-  async processNext() {
-    if (this.queue.length === 0) {
-      this.processing = false;
-      return;
+      items.push({
+        title: item.title || "Untitled",
+        content: item.contentSnippet || item.content || "",
+        link: item.link || "",
+        pubDate: item.pubDate || "",
+        source: feed.title || url,
+      });
+
+      itemsFromThisFeed++;
     }
-    this.processing = true;
 
-    const { fn, resolve, reject } = this.queue.shift();
-    try {
-      const result = await fn();
-      resolve(result);
-    } catch (error) {
-      reject(error);
-    } finally {
-      setTimeout(() => this.processNext(), 500);
-    }
+    return items;
+  } catch (err) {
+    console.error(`Failed to parse RSS feed ${url}:`, err);
+    // Return empty array to avoid rejecting the promise
+    return [];
   }
 }
-
-const aiRequestQueue = new RequestQueue();
 
 /**
  * fetchRssFeeds
@@ -52,41 +49,53 @@ async function fetchRssFeeds(feedUrls = [], category = "") {
   console.log(`Fetching RSS feeds for category: ${category}`);
   const parser = new RSSParser({
     headers: {
-      "User-Agent": "MyCustomAgent/1.0", 
+      "User-Agent": "MyCustomAgent/1.0",
     },
-    // You can add other parser options here as well
   });
+  
+  const MAX_ITEMS_TOTAL = 10;  // total items across all feeds
+  const MAX_ITEMS_PER_FEED = 5; // max items per feed
 
-  const MAX_ITEMS = 5;
+  // Fetch all feeds in parallel safely
+  const feedPromises = feedUrls.map(url =>
+    fetchSingleFeedSafe(url, parser, MAX_ITEMS_TOTAL, MAX_ITEMS_PER_FEED)
+  );
+
+  const allResults = await Promise.all(feedPromises);
+
+  // Combine all items from all feeds and enforce total limit
   const allItems = [];
+  for (const feedItems of allResults) {
+    for (const item of feedItems) {
+      if (allItems.length >= MAX_ITEMS_TOTAL) break;
   
-  for (const url of feedUrls) {
-    if (allItems.length >= MAX_ITEMS) break; // Stop if we've already reached the max
+      // Extract and sanitize content here.
+      const rawContent = item.contentSnippet || item.content || "";
+      const cleanedContent = rawContent.replace(/\n+/g, ' ').trim();
   
-    try {
-      console.log(`Parsing RSS feed: ${url}`);
-      const feed = await parser.parseURL(url);
+      // Split into sentences by period and trim whitespace.
+      // Note: This is a naive approach and may not be perfect for all cases,
+      // but it provides a basic way to limit the content to two sentences.
+      const sentences = cleanedContent.split('.').map(s => s.trim()).filter(Boolean);
   
-      for (const item of feed.items) {
-        if (allItems.length >= MAX_ITEMS) break; // Stop adding items once we reach the limit
+      // Take only the first two sentences if available.
+      const firstTwoSentences = sentences.slice(0, 2);
   
-        allItems.push({
-          title: item.title || "Untitled",
-          content: item.contentSnippet || item.content || "",
-          link: item.link || "",
-          pubDate: item.pubDate || "",
-          source: feed.title || url,
-        });
-      }
-    } catch (err) {
-      console.error(`Failed to parse RSS feed ${url}:`, err);
+      // Recombine them into a single string. If we got two sentences, add a period at the end.
+      const shortenedContent = firstTwoSentences.join('. ') + (firstTwoSentences.length === 2 ? '.' : '');
+  
+      allItems.push({
+        ...item,
+        content: shortenedContent, // Now only the first two sentences are shown
+      });
     }
+    if (allItems.length >= MAX_ITEMS_TOTAL) break;
   }
   
   console.log(`Total RSS items: ${allItems.length}`);
   return allItems;
-  
-}
+}  
+
 
 /**
  * generateSummary
@@ -116,21 +125,19 @@ async function generateSummary(items = [], category = "") {
   `;
 
   try {
-    const response = await aiRequestQueue.add(() => 
-      openai.chat.completions.create({
-        model: "gpt-4o", // or "gpt-3.5-turbo", or any other
-        messages: [
-          {
-            role: "system",
-            content: "You are a helpful assistant that summarizes RSS items."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-      })
-    );
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o", // or "gpt-3.5-turbo"
+      messages: [
+        {
+          role: "system",
+          content: "You are a helpful assistant that summarizes RSS items."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+    });
 
     const summary = response.choices?.[0]?.message?.content || "";
     return summary || "No summary generated.";
@@ -141,38 +148,35 @@ async function generateSummary(items = [], category = "") {
 }
 
 async function suggestRssFeeds(category = "") {
-    const prompt = `
+  const prompt = `
       You are a helpful assistant that suggests valid RSS feeds about "${category}".
       
       Requirements:
-      1. Suggest exactly 3 RSS feed URLs that actively publish news or articles on "${category}".
+      1. Suggest exactly 3 RSS feed URLs that actively publish cutting edge news or articles on "${category}".
       2. Make sure these URLs point directly to actual RSS/XML feeds (not aggregator pages or feed listing pages).
       3. Each must be unique and relevant to "${category}".
       4. Output only the feed URLs, separated by a single comma, with no extra text or formatting.
       Example output: https://example.com/rss,https://another.com/feed,https://third.com/feed
+      5. if category is or related to ai or ai models use https://rss.beehiiv.com/feeds/2R3C6Bt5wj.xml as one of the three urls
     `;
   try {
-    const response = await aiRequestQueue.add(() =>
-      openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: "You are a helpful assistant that suggests RSS feeds."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-      })
-    );
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: "You are a helpful assistant that suggests RSS feeds."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+    });
 
     const content = response.choices?.[0]?.message?.content || "";
     console.log("AI raw feed suggestions:", content);
 
-    // Try to parse URLs from the returned text
-    // E.g. "https://rss.cnn.com/rss/edition_world.rss,https://feeds.bbci.co.uk/news/rss.xml"
     const rssFeedUrls = content
       .split(",")
       .map((feed) => feed.trim())
@@ -188,7 +192,7 @@ async function suggestRssFeeds(category = "") {
 export async function POST(req) {
   try {
     const data = await req.json();
-    const  category = data.category?.trim() || "General";
+    const category = data.category?.trim() || "General";
     const sourceType = data.sourceType || "reliable";
 
     console.log(`Processing request for category: ${category}, sourceType: ${sourceType}`);
@@ -201,7 +205,7 @@ export async function POST(req) {
       rssFeedUrls = reliableSources[category] || [];
       console.log(`Found ${rssFeedUrls.length} pre-selected RSS feeds for category: ${category}`);
     } else {
-      // Let OpenAI suggest 2 RSS feed URLs
+      // Let OpenAI suggest RSS feed URLs
       const aiUrls = await suggestRssFeeds(category);
 
       if (aiUrls.length > 0) {
