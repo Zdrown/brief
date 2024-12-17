@@ -57,7 +57,7 @@ async function fetchRssFeeds(feedUrls = [], category = "") {
     // You can add other parser options here as well
   });
 
-  const MAX_ITEMS = 15;
+  const MAX_ITEMS = 5;
   const allItems = [];
   
   for (const url of feedUrls) {
