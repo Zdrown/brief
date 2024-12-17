@@ -268,7 +268,7 @@ export default function FetchingPage() {
       console.log("Combined Categories for Fetching:", allCategories);
 
       try {
-        const summaries = await Promise.all(
+        const summaries = await Promise.allSettled(
           allCategories.map(async ({ title, sourceType }) => {
             if (!title || !sourceType) {
               console.warn("Skipping invalid category:", { title, sourceType });
@@ -281,7 +281,6 @@ export default function FetchingPage() {
 
             console.log(`Requesting summary for: ${title} (${sourceType})`);
 
-            // Endpoint for your new RSS-based route
             const response = await fetch("/api/newsFetcher", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -292,10 +291,8 @@ export default function FetchingPage() {
               `Response for ${title}: Status ${response.status}, OK: ${response.ok}`
             );
 
-            const data = await response.json();
-            console.log(`Response Data for ${title}:`, data);
-
             if (!response.ok) {
+              const data = await response.json();
               console.error(`Failed to fetch summary for ${title}:`, data.error);
               return {
                 category: title,
@@ -303,6 +300,9 @@ export default function FetchingPage() {
                 items: [],
               };
             }
+
+            const data = await response.json();
+            console.log(`Response Data for ${title}:`, data);
 
             return {
               category: title,
@@ -312,8 +312,20 @@ export default function FetchingPage() {
           })
         );
 
-        setResults(summaries);
-        console.log("Final Summaries:", summaries);
+        const finalSummaries = summaries.map((res, i) => {
+          if (res.status === "fulfilled") {
+            return res.value; 
+          }
+          const { title } = allCategories[i];
+          return {
+            category: title || "Unknown",
+            summary: "Failed to load summary",
+            items: [],
+          };
+        });
+
+        setResults(finalSummaries);
+        console.log("Final Summaries:", finalSummaries);
       } catch (error) {
         console.error("Error fetching summaries:", error);
       } finally {
@@ -325,28 +337,17 @@ export default function FetchingPage() {
     fetchSummaries();
   }, []);
 
-  // ================ Render ================ //
   const handleSaveBrief = () => {
     try {
-      // Retrieve existing briefs array from localStorage (or empty if not found)
       const existingBriefs = LocalStorageHelper.getItem("dailyBriefs") || [];
-  
-      // Generate a unique ID (often the current ISO date/time)
       const isoDateString = new Date().toISOString();
-  
-      // Create an object for the new brief
       const newBrief = {
-        id: isoDateString,  // unique ID
-        date: isoDateString, 
-        data: results       // 'results' is your current daily brief data
+        id: isoDateString,
+        date: isoDateString,
+        data: results,
       };
-  
-      // Push this new brief into the array of stored briefs
       existingBriefs.push(newBrief);
-  
-      // Save the updated array back to localStorage
       LocalStorageHelper.setItem("dailyBriefs", existingBriefs);
-  
       alert("Brief saved to local storage!");
     } catch (error) {
       console.error("Failed to save brief:", error);
@@ -354,8 +355,6 @@ export default function FetchingPage() {
   };
 
   const handleShareBrief = () => {
-    // Build a shareable text summary
-    // For example, we concatenate category + summary
     const shareText = results
       .map(
         (r) =>
@@ -368,16 +367,14 @@ export default function FetchingPage() {
         .share({
           title: "Daily Brief",
           text: shareText,
-          url: window.location.href, // optional link
+          url: window.location.href,
         })
         .catch((err) => console.error("Share failed:", err));
     } else {
-      // Fallback: simply copy to clipboard or show a message
       navigator.clipboard.writeText(shareText);
       alert("Brief copied to clipboard (Web Share not supported).");
     }
   };
-
 
   if (loading) {
     return (
@@ -395,17 +392,15 @@ export default function FetchingPage() {
       <DateHeading>{today}</DateHeading>
       <SubHeading>Your Daily Brief</SubHeading>
 
-           {/* Buttons to Save/Share the entire briefing */}
-           <ActionButtonsContainer>
+      <ActionButtonsContainer>
         <ActionButton onClick={handleSaveBrief}>Save Brief</ActionButton>
         <ActionButton onClick={handleShareBrief}>Share Brief</ActionButton>
       </ActionButtonsContainer>
 
-
       <ResultsContainer>
         {results.map(({ category, summary, items }) => (
           <CategorySection key={category}>
-              <SectionTitle>{capitalizeAllWords(category)}</SectionTitle>
+            <SectionTitle>{capitalizeAllWords(category)}</SectionTitle>
             <Summary>{summary}</Summary>
 
             {items && items.length > 0 && (
@@ -436,4 +431,4 @@ export default function FetchingPage() {
       </ResultsContainer>
     </PageContainer>
   );
-  }
+}
