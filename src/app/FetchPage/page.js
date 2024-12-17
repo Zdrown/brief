@@ -155,7 +155,7 @@ const ActionButton = styled.button`
 // Title of each category
 const SectionTitle = styled.h2`
   font-size: 1.6rem;
-  color: ${({ theme }) => theme.backgrounds.secondary};{
+  color: ${({ theme }) => theme.backgrounds.secondary};
   margin-bottom: 1rem;
   text-transform: capitalize;
   border-bottom: 2px solid ${({ theme }) => theme.colors.darkBlue};
