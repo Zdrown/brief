@@ -155,7 +155,7 @@ const ActionButton = styled.button`
 // Title of each category
 const SectionTitle = styled.h2`
   font-size: 1.6rem;
-  color: ${({ theme }) => theme.backgrounds.secondary};
+  color: ${({ theme }) => theme.backgrounds.secondary};{
   margin-bottom: 1rem;
   text-transform: capitalize;
   border-bottom: 2px solid ${({ theme }) => theme.colors.darkBlue};
@@ -217,6 +217,17 @@ export default function FetchingPage() {
 
   const [today, setToday] = useState("");
 
+  function capitalizeAllWords(str) {
+    if (!str) return "";
+    return str
+      .split(" ")
+      .map((word) =>
+        word.charAt(0).toUpperCase() + word.slice(1)
+      )
+      .join(" ");
+  }
+  
+  
 
   useEffect(() => {
     const now = new Date();
@@ -394,7 +405,7 @@ export default function FetchingPage() {
       <ResultsContainer>
         {results.map(({ category, summary, items }) => (
           <CategorySection key={category}>
-            <SectionTitle>{category}</SectionTitle>
+              <SectionTitle>{capitalizeAllWords(category)}</SectionTitle>
             <Summary>{summary}</Summary>
 
             {items && items.length > 0 && (

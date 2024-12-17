@@ -12,6 +12,8 @@ class RequestQueue {
     this.processing = false;
   }
 
+ 
+
   async add(fn) {
     return new Promise((resolve, reject) => {
       this.queue.push({ fn, resolve, reject });
@@ -48,15 +50,26 @@ const aiRequestQueue = new RequestQueue();
  */
 async function fetchRssFeeds(feedUrls = [], category = "") {
   console.log(`Fetching RSS feeds for category: ${category}`);
-  const parser = new RSSParser();
-  let allItems = [];
+  const parser = new RSSParser({
+    headers: {
+      "User-Agent": "MyCustomAgent/1.0", 
+    },
+    // You can add other parser options here as well
+  });
 
+  const MAX_ITEMS = 10;
+  const allItems = [];
+  
   for (const url of feedUrls) {
+    if (allItems.length >= MAX_ITEMS) break; // Stop if we've already reached the max
+  
     try {
       console.log(`Parsing RSS feed: ${url}`);
       const feed = await parser.parseURL(url);
-
+  
       for (const item of feed.items) {
+        if (allItems.length >= MAX_ITEMS) break; // Stop adding items once we reach the limit
+  
         allItems.push({
           title: item.title || "Untitled",
           content: item.contentSnippet || item.content || "",
@@ -69,16 +82,10 @@ async function fetchRssFeeds(feedUrls = [], category = "") {
       console.error(`Failed to parse RSS feed ${url}:`, err);
     }
   }
-
-  // Optional filter: naive approach to match 'category' in content or title
-  const lowerCat = category.toLowerCase();
-  allItems = allItems.filter((item) => {
-    const text = `${item.title} ${item.content}`.toLowerCase();
-    return text.includes(lowerCat);
-  });
-
-  console.log(`Total RSS items after filtering: ${allItems.length}`);
+  
+  console.log(`Total RSS items: ${allItems.length}`);
   return allItems;
+  
 }
 
 /**
@@ -134,13 +141,20 @@ async function generateSummary(items = [], category = "") {
 }
 
 async function suggestRssFeeds(category = "") {
-  const prompt = `Suggest exactly 2 reliable RSS feed URLs for the category "${category}". 
-  Output only the URLs separated by a comma, like: https://example.com/rss,https://another.com/feed`;
-
+    const prompt = `
+      You are a helpful assistant that suggests valid RSS feeds about "${category}".
+      
+      Requirements:
+      1. Suggest exactly 3 RSS feed URLs that actively publish news or articles on "${category}".
+      2. Make sure these URLs point directly to actual RSS/XML feeds (not aggregator pages or feed listing pages).
+      3. Each must be unique and relevant to "${category}".
+      4. Output only the feed URLs, separated by a single comma, with no extra text or formatting.
+      Example output: https://example.com/rss,https://another.com/feed,https://third.com/feed
+    `;
   try {
     const response = await aiRequestQueue.add(() =>
       openai.chat.completions.create({
-        model: "gpt-4",
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
