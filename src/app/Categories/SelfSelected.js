@@ -96,7 +96,7 @@ business
      1 maybe edgy maybe not great joke 
 
  */"use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styled from "styled-components";
 import LocalStorageHelper from "../../../utils/localStorageHelper";
 
@@ -159,8 +159,6 @@ const CardGrid = styled.div`
   gap: 1.5rem;
 `;
 
-
-
 const DeleteButton = styled.button`
   position: absolute;
   top: 8px;
@@ -170,7 +168,7 @@ const DeleteButton = styled.button`
   color: ${({ theme }) => theme.text.primary};
   font-size: 1rem;
   cursor: pointer;
-  visibility: hidden; /* Hide by default */
+  visibility: hidden;
   transition: color 0.3s ease, transform 0.2s ease;
 
   &:hover {
@@ -195,7 +193,7 @@ const Card = styled.div`
     color: ${({ theme }) => theme.colors.darkBlue};
 
     ${DeleteButton} {
-      visibility: visible; /* Show delete button only on hover */
+      visibility: visible;
     }
   }
 `;
@@ -214,10 +212,13 @@ const Title = styled.h3`
 
 export default function SelfSelected() {
   const [input, setInput] = useState("");
-  const [categories, setCategories] = useState(
-    LocalStorageHelper.getItem("selfSelectedCategories") || []
-  );
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const savedCategories = LocalStorageHelper.getSelfSelectedCategories() || [];
+    setCategories(savedCategories);
+  }, []);
 
   const fetchEmoji = async (title) => {
     setLoading(true);
@@ -230,43 +231,43 @@ export default function SelfSelected() {
 
       const data = await response.json();
       return response.ok ? data.emoji || "📝" : "📝";
-    } catch {
+    } catch (error) {
+      console.error("Error fetching emoji:", error);
       return "📝";
     } finally {
       setLoading(false);
     }
   };
+
   const isSingleEmoji = (str) => {
-    return /^(\p{Emoji}|\p{Regional_Indicator})+$/u.test(str);//validates the emoji to ensure the retured data from the model is valid
+    const emojiRegex =
+      /^(\p{Emoji}|\p{Extended_Pictographic}|\p{Regional_Indicator}{2}|\p{Emoji}\uFE0F)$/u;
+    return emojiRegex.test(str.trim());
   };
-  
 
   const handleAddCategory = async () => {
     if (input.trim() !== "") {
       const emoji = await fetchEmoji(input);
-      const fallbackEmoji = "📝"; // Default fallback emoji
+      const fallbackEmoji = "📝";
       const validEmoji = isSingleEmoji(emoji) ? emoji : fallbackEmoji;
-  
+
       const newCategory = { id: Date.now(), title: input, icon: validEmoji };
       const updatedCategories = [...categories, newCategory];
       setCategories(updatedCategories);
-      LocalStorageHelper.setItem("selfSelectedCategories", updatedCategories);
+      LocalStorageHelper.saveSelfSelectedCategories(updatedCategories);
       setInput("");
     }
   };
-  
-
-
 
   const handleDeleteCategory = (id) => {
     const updatedCategories = categories.filter((category) => category.id !== id);
     setCategories(updatedCategories);
-    LocalStorageHelper.setItem("selfSelectedCategories", updatedCategories);
+    LocalStorageHelper.saveSelfSelectedCategories(updatedCategories);
   };
 
   return (
     <SectionWrapper>
-      <SectionTitle>Self Selected Categories</SectionTitle>
+      <SectionTitle>Stay Updated On What Moves You</SectionTitle>
       <FormContainer>
         <Input
           type="text"
@@ -286,7 +287,7 @@ export default function SelfSelected() {
         <CardGrid>
           {categories.map((category) => (
             <Card key={category.id}>
-             <DeleteButton onClick={() => handleDeleteCategory(category.id)}>
+              <DeleteButton onClick={() => handleDeleteCategory(category.id)}>
                 X
               </DeleteButton>
               <Emoji>{category.icon}</Emoji>

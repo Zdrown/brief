@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 import styled from "styled-components";
 import LocalStorageHelper from "../../../utils/localStorageHelper";
 
-
 const SectionWrapper = styled.div`
   margin-bottom: 2rem;
 `;
@@ -66,13 +65,16 @@ export default function Preselected() {
 
   const [selectedCategories, setSelectedCategories] = useState([]);
 
+  // Load preselected categories from local storage on mount
   useEffect(() => {
-    const savedCategories = LocalStorageHelper.getItem("selectedCategories") || [];
+    const savedCategories =
+      LocalStorageHelper.getPreselectedCategories() || [];
     setSelectedCategories(savedCategories);
   }, []);
-  
+
+  // Save preselected categories to local storage whenever they change
   useEffect(() => {
-    LocalStorageHelper.setItem("selectedCategories", selectedCategories);
+    LocalStorageHelper.savePreselectedCategories(selectedCategories);
   }, [selectedCategories]);
 
   const handleCategoryClick = (category) => {
@@ -85,18 +87,17 @@ export default function Preselected() {
 
   return (
     <SectionWrapper>
-      <SectionTitle>Preselected Categories</SectionTitle>
+      <SectionTitle>Select Categories</SectionTitle>
       <CardGrid>
         {categories.map((category) => (
-    <Card
-    key={category.id}
-    $isSelected={selectedCategories.includes(category.title)} // Use transient prop
-    onClick={() => handleCategoryClick(category)}
-  >
-    <Emoji>{category.icon}</Emoji>
-    <Title>{category.title}</Title>
-  </Card>
-  
+          <Card
+            key={category.id}
+            $isSelected={selectedCategories.includes(category.title)} // Use transient prop
+            onClick={() => handleCategoryClick(category)}
+          >
+            <Emoji>{category.icon}</Emoji>
+            <Title>{category.title}</Title>
+          </Card>
         ))}
       </CardGrid>
     </SectionWrapper>
