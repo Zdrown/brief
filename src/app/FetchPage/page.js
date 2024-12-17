@@ -66,10 +66,14 @@ const SubHeading = styled.h2`
 
 // Container for everything below the header
 const ResultsContainer = styled.div`
-  width: 100%;
-  max-width: 1000px;
-  margin-top: 1.5rem;
+  width: 90%; // Responsive width to prevent overly wide layouts
+  max-width: 1200px; // Slightly larger to accommodate more cards per row
+  margin: 1.5rem auto; // Center the container with margin auto
   animation: ${fadeIn} 0.6s ease;
+
+  @media (min-width: 768px) {
+    width: 95%; // Slightly wider on larger screens
+  }
 `;
 
 // Central loading container

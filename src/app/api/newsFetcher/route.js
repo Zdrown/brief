@@ -157,7 +157,7 @@ async function suggestRssFeeds(category = "") {
       3. Each must be unique and relevant to "${category}".
       4. Output only the feed URLs, separated by a single comma, with no extra text or formatting.
       Example output: https://example.com/rss,https://another.com/feed,https://third.com/feed
-      5. if category is or related to ai or ai models use https://rss.beehiiv.com/feeds/2R3C6Bt5wj.xml as one of the three urls
+      5. If category is or very closely related to ai or ai models use https://rss.beehiiv.com/feeds/2R3C6Bt5wj.xml as one of the three urls (broad domains like math or computer science dont count and shouldnt use that url)
     `;
   try {
     const response = await openai.chat.completions.create({
