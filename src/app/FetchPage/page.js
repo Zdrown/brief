@@ -576,8 +576,8 @@ export default function FetchingPage() {
     {/* Display the highlighted text as a reference */}
     {highlightedText && (
       <div style={{ marginBottom: '0.5rem', fontStyle: 'italic', color: '#ccc' }}>
-        "{highlightedText}"
-      </div>
+      &quot;{highlightedText}&quot;
+    </div>
     )}
     <ChatInputContainer onSubmit={handleChatSubmit}>
       <ChatInput
