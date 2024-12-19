@@ -121,7 +121,8 @@ async function generateSummary(items = [], category = "") {
   3. Identifies trends or patterns
   4. Maintains proper context
   5. Uses only text and punctuation and no other symbols.
-  7. Doesnt refrence the rss feed but treats these a one summary covering recent state of news for this category.
+  6. Doesnt refrence the rss feed but treats these a one summary covering recent state of news for this category.
+  7.5. Is written in well-separated paragraphs, each focusing on a specific idea or theme.
   `;
 
   try {
@@ -152,12 +153,12 @@ async function suggestRssFeeds(category = "") {
       You are a helpful assistant that suggests valid RSS feeds about "${category}".
       
       Requirements:
-      1. Suggest exactly 3 RSS feed URLs that actively publish cutting edge news or articles on "${category}".
+      1. Suggest exactly 10 RSS feed URLs that actively publish cutting edge news or articles on the topic: "${category}".
       2. Make sure these URLs point directly to actual RSS/XML feeds (not aggregator pages or feed listing pages).
       3. Each must be unique and relevant to "${category}".
       4. Output only the feed URLs, separated by a single comma, with no extra text or formatting.
       Example output: https://example.com/rss,https://another.com/feed,https://third.com/feed
-      5. If category is or very closely related to ai or ai models use https://rss.beehiiv.com/feeds/2R3C6Bt5wj.xml as one of the three urls (broad domains like math or computer science dont count and shouldnt use that url)
+      5. If topic is or contains the words ai or ai models use https://rss.beehiiv.com/feeds/2R3C6Bt5wj.xml as one of the three urls. Do not use this for topics like computer science or closely relates subjects. 
     `;
   try {
     const response = await openai.chat.completions.create({
@@ -274,7 +275,10 @@ export async function POST(req) {
 
     console.log("Final JSON payload:", finalResponse);
 
-    return Response.json(finalResponse, { status: 200 });
+    return new Response(JSON.stringify(finalResponse), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     console.error("Error in RSS-based OpenAI route:", error);
     return Response.json(

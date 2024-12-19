@@ -13,6 +13,7 @@
     "@agentic/perigon": "^7.2.0",
     "@agentic/stdlib": "^7.2.0",
     "@google/generative-ai": "^0.1.3",
+    "lucide-react": "^0.468.0",
     "next": "15.0.2",
     "next-auth": "^4.24.10",
     "nprogress": "^0.2.0",

@@ -5,6 +5,7 @@ import styled, { keyframes } from "styled-components";
 import LocalStorageHelper from "../../../utils/localStorageHelper";
 import NProgress from "nprogress";
 import "nprogress/nprogress.css";
+import Sidebar from "../Sidebar/Sidebar";
 
 // Optional: Configure NProgress to not show spinner and speed up
 NProgress.configure({ showSpinner: false, speed: 400, minimum: 0.2 });
@@ -29,6 +30,8 @@ const loadingBarAnim = keyframes`
 // ================ Styled Components ================ //
 
 // Outer container for the entire page
+
+
 const PageContainer = styled.div`
   min-height: 100vh;
   background-color: ${({ theme }) => theme.backgrounds.secondary};
@@ -37,6 +40,10 @@ const PageContainer = styled.div`
   flex-direction: column;
   align-items: center;
   padding: 2rem;
+
+  &[data-sidebar='true'] {
+    /* styles when sidebar is open */
+  }
 `;
 
 const DateHeading = styled.h1`
@@ -49,7 +56,7 @@ const DateHeading = styled.h1`
 const SubHeading = styled.h2`
   font-size: 1.3rem;
   font-weight: 400;
-  color: ${({ theme }) => theme.colors.darkBlue}; }
+  color: ${({ theme }) => theme.colors.darkBlue}; 
   margin: 0.5rem 0 2rem;
 `;
 
@@ -128,15 +135,15 @@ const CategorySection = styled.div`
 
 // Action buttons container (missing from snippet)
 const ActionButtonsContainer = styled.div`
-  display: flex;
+  display: ${({ $isOpen }) => ($isOpen ? 'none' : 'flex')};
   gap: 1rem;
   margin-bottom: 1.5rem;
   justify-content: flex-end;
   width: 100%;
   max-width: 1000px;
-  margin-left: 29vw
+  margin-left: 29vw;
+  transition: opacity 0.3s ease;
 `;
-
 // Styled button (missing from snippet)
 const ActionButton = styled.button`
   background-color: ${({ theme }) => theme.colors.darkBlue};
@@ -241,6 +248,47 @@ export default function FetchingPage() {
   const [loading, setLoading] = useState(true);
 
   const [today, setToday] = useState("");
+
+  const [loadingNewCategory, setLoadingNewCategory] = useState(false);
+
+async function handleNewCategoryAdded(category) {
+  setLoadingNewCategory(true);
+  try {
+    const response = await fetch('/api/newsFetcher', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category, sourceType: 'self' }),
+    });
+
+    const data = await response.json();
+    if (response.ok && data.items?.length) {
+      // Merge the new category items into existing results
+      setResults(prevResults => [...prevResults, {
+        category: data.metadata.category,
+        summary: data.summary,
+        items: data.items,
+      }]);
+    } else {
+      console.warn("No items found for this category:", category);
+    }
+  } catch (error) {
+    console.error("Error fetching new category items:", error);
+  } finally {
+    setLoadingNewCategory(false);
+  }
+}
+
+
+  function generateHash(input) {
+    let hash = 0;
+    for (let i = 0; i < input.length; i++) {
+      const char = input.charCodeAt(i);
+      hash = (hash << 5) - hash + char;// hashing function to allow the returned summary to have a unique to render it 
+      hash |= 0; // Convert to 32-bit integer
+    }
+    return `key-${hash}`;
+  }
+  
 
   function capitalizeAllWords(str) {
     if (!str) return "";
@@ -349,7 +397,8 @@ export default function FetchingPage() {
           };
         });
 
-        setResults(finalSummaries);
+        setResults(finalSummaries)
+
         console.log("Final Summaries:", finalSummaries);
       } catch (error) {
         console.error("Error fetching summaries:", error);
@@ -361,6 +410,7 @@ export default function FetchingPage() {
 
     fetchSummaries();
   }, []);
+
 
   const handleSaveBrief = () => {
     try {
@@ -378,6 +428,8 @@ export default function FetchingPage() {
       console.error("Failed to save brief:", error);
     }
   };
+
+
 
   const handleShareBrief = () => {
     const shareText = results
@@ -412,21 +464,30 @@ export default function FetchingPage() {
     );
   }
 
-  return (
-    <PageContainer>
-      <DateHeading>{today}</DateHeading>
-      <SubHeading>Your Daily Brief</SubHeading>
+  return (// for newly added category in sidebaer 
+    <Sidebar results={results} onNewCategoryAdded={handleNewCategoryAdded}>
+    {({ sidebarOpen }) => (
+     <PageContainer data-sidebar={sidebarOpen ? 'true' : 'false'}>
+        <DateHeading>{today}</DateHeading>
+        <SubHeading>Your Daily Brief</SubHeading>
 
-      <ActionButtonsContainer>
-        <ActionButton onClick={handleSaveBrief}>Save Brief</ActionButton>
-        <ActionButton onClick={handleShareBrief}>Share Brief</ActionButton>
-      </ActionButtonsContainer>
+      <ActionButtonsContainer $isOpen={sidebarOpen}> 
+  <ActionButton onClick={handleSaveBrief}>Save Brief</ActionButton>
+  <ActionButton onClick={handleShareBrief}>Share Brief</ActionButton>
+</ActionButtonsContainer>
 
       <ResultsContainer>
         {results.map(({ category, summary, items }) => (
           <CategorySection key={category}>
             <SectionTitle>{capitalizeAllWords(category)}</SectionTitle>
-            <Summary>{summary}</Summary>
+            <div>
+  {summary.split(/\n\n+/).map((paragraph) => (
+    <Summary key={generateHash(paragraph)}>
+      {paragraph}
+    </Summary>
+  ))}
+</div>
+
             <SectionTitle2>Read The Full Article</SectionTitle2>
             {items && items.length > 0 && (
             
@@ -455,6 +516,11 @@ export default function FetchingPage() {
           </CategorySection>
         ))}
       </ResultsContainer>
-    </PageContainer>
-  );
+      <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+            Loading new category...
+          </div>
+      </PageContainer>
+    )}
+  </Sidebar>
+);
 }

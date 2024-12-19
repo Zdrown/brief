@@ -1,4 +1,10 @@
-todo: like this brief to know whayt rss feeds you like in a category
-change ui cards of websites 3x3 cetered with a readmore subtitle  for each categiory 
-have you breief read to you with a play button on each catergory or play for the whole thing up top
-save breifs and hav them diasplayed on the home page is a user with data exists if not usual home page 
+todo:
+-like this brief to know whayt rss feeds you like in a category
+-change ui cards of websites 3x3 cetered with a readmore subtitle  for each categiory 
+-have you breief read to you with a play button on each catergory or play for the whole thing up top
+-save breifs and hav them diasplayed on the home page is a user with data exists if not usual home page 
+-the websites change dimension when side bar is open 
+-hgilight text allows ai chatbot to ask questions - gemini (free)- gives paragraph as context and asks prompt
+-add new category from side bar and doesnt rerender but just adds the single catrgory 
+- get 99% resposne fidelity of articles 
+- is the request looping over found articles ? does it summarie more than once ?*****
