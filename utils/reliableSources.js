@@ -15,6 +15,15 @@ const reliableSources = {
       "https://variety.com/feed/",
       "https://www.hollywoodreporter.com/c/news/rss",
     ],
+    WorldNews: [
+      "https://feeds.npr.org/1004/rss.xml",
+      "https://feeds.bbci.co.uk/news/world/rss.xml",
+
+    ],
+    Finance: [
+      "https://seekingalpha.com/feed.xml",
+      "https://fortune.com/feed/fortune-feeds/?id=3230629"// could be broken check this - skeptidc about the id 
+    ]
   };
   
   export const getReliableSourcesForCategory = (category) => {

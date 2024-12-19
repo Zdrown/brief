@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import styled, { keyframes } from "styled-components";
 import LocalStorageHelper from "../../../utils/localStorageHelper";
 import NProgress from "nprogress";
 import "nprogress/nprogress.css";
 import Sidebar from "../Sidebar/Sidebar";
 
-// Optional: Configure NProgress to not show spinner and speed up
 NProgress.configure({ showSpinner: false, speed: 400, minimum: 0.2 });
 
 // ================ Animations ================
@@ -30,8 +29,6 @@ const loadingBarAnim = keyframes`
 // ================ Styled Components ================ //
 
 // Outer container for the entire page
-
-
 const PageContainer = styled.div`
   min-height: 100vh;
   background-color: ${({ theme }) => theme.backgrounds.secondary};
@@ -60,26 +57,14 @@ const SubHeading = styled.h2`
   margin: 0.5rem 0 2rem;
 `;
 
-// Main header
-/*const PageHeader = styled.h1`
-  font-size: 3rem;
-  margin-bottom: 1rem;
-  color: ${({ theme }) => theme.colors.darkBlue};
-  }
-  text-align: center;
-  animation: ${fadeIn} 0.6s ease;
-  font familt 
-`;*/
-
-// Container for everything below the header
 const ResultsContainer = styled.div`
-  width: 95%; // Slightly wider by default
-  max-width: 1400px; // Increase the max width for better use of space
-  margin: 1.5rem auto; // Center it with margin auto
+  width: 95%;
+  max-width: 1400px;
+  margin: 1.5rem auto;
   animation: ${fadeIn} 0.6s ease;
 
   @media (min-width: 1200px) {
-    width: 100%; // Use full width on very large screens
+    width: 100%;
   }
 `;
 
@@ -133,7 +118,6 @@ const CategorySection = styled.div`
   animation: ${fadeInUp} 0.4s ease both;
 `;
 
-// Action buttons container (missing from snippet)
 const ActionButtonsContainer = styled.div`
   display: ${({ $isOpen }) => ($isOpen ? 'none' : 'flex')};
   gap: 1rem;
@@ -144,7 +128,7 @@ const ActionButtonsContainer = styled.div`
   margin-left: 29vw;
   transition: opacity 0.3s ease;
 `;
-// Styled button (missing from snippet)
+
 const ActionButton = styled.button`
   background-color: ${({ theme }) => theme.colors.darkBlue};
   color: #fff;
@@ -162,8 +146,6 @@ const ActionButton = styled.button`
   }
 `;
 
-
-// Title of each category
 const SectionTitle = styled.h2`
   font-size: 1.8rem;
   color: ${({ theme }) => theme.backgrounds.secondary};
@@ -182,8 +164,6 @@ const SectionTitle2 = styled.h2`
   padding-bottom: 0.5rem;
 `;
 
-
-// Summaries text styling
 const Summary = styled.p`
   font-size: 1.2rem;
   line-height: 1.6;
@@ -191,24 +171,21 @@ const Summary = styled.p`
   margin-bottom: 1.5rem;
 `;
 
-// Optional container for the list of feed items
 const FeedItems = styled.ul`
   list-style: none;
   margin: 0;
   padding: 0;
   
-  /* Use a responsive grid layout */
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1rem; /* spacing between cards */
+  gap: 1rem;
 `;
 
-// Individual feed item styling (cards)
 const FeedItem = styled.li`
   padding: 1rem;
   background-color: ${({ theme }) => theme.backgrounds.secondary};
-  border-radius: 12px; /* more rounded corners */
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* softer shadow for a cleaner look */
+  border-radius: 12px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   animation: ${fadeInUp} 0.4s ease both;
 
@@ -218,21 +195,16 @@ const FeedItem = styled.li`
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
   }
 
-  /* Make sure the card doesn't get too large */
   max-width: 100%; 
   overflow: hidden;
 `;
 
-
-
-// Title of each item
 const FeedItemTitle = styled.h3`
   font-size: 1.15rem;
   margin: 0 0 0.5rem 0;
   color: ${({ theme }) => theme.colors.darkBlue};
 `;
 
-// Feed item content
 const FeedItemContent = styled.p`
   font-size: 0.95rem;
   line-height: 1.4;
@@ -241,54 +213,112 @@ const FeedItemContent = styled.p`
   opacity: 0.9;
 `;
 
+// Chat bar styles
+const ChatBarContainer = styled.div`
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 600px;
+  background: ${({ theme }) => theme.backgrounds.primary};
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  border-radius: 8px;
+  padding: 1rem;
+  z-index: 10000;
+`;
+
+const ChatBarTitle = styled.div`
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  color: ${({ theme }) => theme.backgrounds.secondary};
+`;
+
+const ChatInputContainer = styled.form`
+  display: flex;
+  gap: 0.5rem;
+`;
+
+const ChatInput = styled.input`
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-family: inherit;
+  font-size: 1rem;
+`;
+
+const ChatSendButton = styled.button`
+  background: ${({ theme }) => theme.colors.darkBlue};
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 0 1rem;
+  font-size: 1rem;
+  cursor: pointer;
+  font-family: inherit;
+
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.secondaryBlue};
+  }
+`;
+
+const ChatResponse = styled.div`
+  margin-top: 1rem;
+  font-size: 0.95rem;
+  color:${({ theme }) => theme.backgrounds.secondary};
+  line-height: 1.4;
+`;
+
 // ================ Main Component ================ //
 
 export default function FetchingPage() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const [today, setToday] = useState("");
-
   const [loadingNewCategory, setLoadingNewCategory] = useState(false);
 
-async function handleNewCategoryAdded(category) {
-  setLoadingNewCategory(true);
-  try {
-    const response = await fetch('/api/newsFetcher', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ category, sourceType: 'self' }),
-    });
+  // For chat bar
+  const [highlightedText, setHighlightedText] = useState("");
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [userQuery, setUserQuery] = useState("");
+  const [chatResponse, setChatResponse] = useState("");
 
-    const data = await response.json();
-    if (response.ok && data.items?.length) {
-      // Merge the new category items into existing results
-      setResults(prevResults => [...prevResults, {
-        category: data.metadata.category,
-        summary: data.summary,
-        items: data.items,
-      }]);
-    } else {
-      console.warn("No items found for this category:", category);
+  async function handleNewCategoryAdded(category) {
+    setLoadingNewCategory(true);
+    try {
+      const response = await fetch('/api/newsFetcher', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category, sourceType: 'self' }),
+      });
+
+      const data = await response.json();
+      if (response.ok && data.items?.length) {
+        setResults(prevResults => [...prevResults, {
+          category: data.metadata.category,
+          summary: data.summary,
+          items: data.items,
+        }]);
+      } else {
+        console.warn("No items found for this category:", category);
+      }
+    } catch (error) {
+      console.error("Error fetching new category items:", error);
+    } finally {
+      setLoadingNewCategory(false);
     }
-  } catch (error) {
-    console.error("Error fetching new category items:", error);
-  } finally {
-    setLoadingNewCategory(false);
   }
-}
-
 
   function generateHash(input) {
     let hash = 0;
     for (let i = 0; i < input.length; i++) {
       const char = input.charCodeAt(i);
-      hash = (hash << 5) - hash + char;// hashing function to allow the returned summary to have a unique to render it 
-      hash |= 0; // Convert to 32-bit integer
+      hash = (hash << 5) - hash + char;
+      hash |= 0;
     }
     return `key-${hash}`;
   }
-  
 
   function capitalizeAllWords(str) {
     if (!str) return "";
@@ -299,8 +329,6 @@ async function handleNewCategoryAdded(category) {
       )
       .join(" ");
   }
-  
-  
 
   useEffect(() => {
     const now = new Date();
@@ -323,10 +351,6 @@ async function handleNewCategoryAdded(category) {
       const selfSelectedCategories =
         LocalStorageHelper.getItem("selfSelectedCategories") || [];
 
-      console.log("Preselected Categories:", preselectedCategories);
-      console.log("Self-Selected Categories:", selfSelectedCategories);
-
-      // Combine categories, marking them with sourceType
       const allCategories = [
         ...preselectedCategories.map((category) => ({
           title: category,
@@ -337,8 +361,6 @@ async function handleNewCategoryAdded(category) {
           sourceType: "self",
         })),
       ];
-
-      console.log("Combined Categories for Fetching:", allCategories);
 
       try {
         const summaries = await Promise.allSettled(
@@ -352,17 +374,11 @@ async function handleNewCategoryAdded(category) {
               };
             }
 
-            console.log(`Requesting summary for: ${title} (${sourceType})`);
-
             const response = await fetch("/api/newsFetcher", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ category: title, sourceType }),
             });
-
-            console.log(
-              `Response for ${title}: Status ${response.status}, OK: ${response.ok}`
-            );
 
             if (!response.ok) {
               const data = await response.json();
@@ -375,8 +391,6 @@ async function handleNewCategoryAdded(category) {
             }
 
             const data = await response.json();
-            console.log(`Response Data for ${title}:`, data);
-
             return {
               category: title,
               summary: data.summary || "No summary available",
@@ -397,9 +411,7 @@ async function handleNewCategoryAdded(category) {
           };
         });
 
-        setResults(finalSummaries)
-
-        console.log("Final Summaries:", finalSummaries);
+        setResults(finalSummaries);
       } catch (error) {
         console.error("Error fetching summaries:", error);
       } finally {
@@ -410,7 +422,6 @@ async function handleNewCategoryAdded(category) {
 
     fetchSummaries();
   }, []);
-
 
   const handleSaveBrief = () => {
     try {
@@ -428,8 +439,6 @@ async function handleNewCategoryAdded(category) {
       console.error("Failed to save brief:", error);
     }
   };
-
-
 
   const handleShareBrief = () => {
     const shareText = results
@@ -453,6 +462,46 @@ async function handleNewCategoryAdded(category) {
     }
   };
 
+  // Handle text highlight
+  const handleMouseUp = () => {
+    const selection = window.getSelection();
+    const text = selection?.toString().trim();
+    
+    if (text && text.length > 0) {
+      // If user selected some text, open chat bar and set query to highlighted text
+      setHighlightedText(text);
+      setIsChatOpen(true);
+      setChatResponse("");
+      // Automatically populate input with highlighted text
+    } else {
+      // If no text is selected, close the chat bar
+      setIsChatOpen(false);
+    }
+  };
+
+  const handleChatSubmit = async (e) => {
+    e.preventDefault();
+    if (!userQuery.trim()) return;
+
+    try {
+      const response = await fetch("/api/Chatbot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ highlightedText, query: userQuery }),
+      });
+
+      const data = await response.json();
+      if (response.ok && data.response) {
+        setChatResponse(data.response);
+      } else {
+        setChatResponse("Sorry, I couldn't get an answer right now.");
+      }
+    } catch (error) {
+      console.error("Error querying LLM:", error);
+      setChatResponse("An error occurred while fetching the answer.");
+    }
+  };
+
   if (loading) {
     return (
       <PageContainer>
@@ -464,63 +513,87 @@ async function handleNewCategoryAdded(category) {
     );
   }
 
-  return (// for newly added category in sidebaer 
+  return (
     <Sidebar results={results} onNewCategoryAdded={handleNewCategoryAdded}>
-    {({ sidebarOpen }) => (
-     <PageContainer data-sidebar={sidebarOpen ? 'true' : 'false'}>
-        <DateHeading>{today}</DateHeading>
-        <SubHeading>Your Daily Brief</SubHeading>
+      {({ sidebarOpen }) => (
+        <PageContainer data-sidebar={sidebarOpen ? 'true' : 'false'}>
+          <DateHeading>{today}</DateHeading>
+          <SubHeading>Your Daily Brief</SubHeading>
 
-      <ActionButtonsContainer $isOpen={sidebarOpen}> 
-  <ActionButton onClick={handleSaveBrief}>Save Brief</ActionButton>
-  <ActionButton onClick={handleShareBrief}>Share Brief</ActionButton>
-</ActionButtonsContainer>
+          <ActionButtonsContainer $isOpen={sidebarOpen}> 
+            <ActionButton onClick={handleSaveBrief}>Save Brief</ActionButton>
+            <ActionButton onClick={handleShareBrief}>Share Brief</ActionButton>
+          </ActionButtonsContainer>
 
-      <ResultsContainer>
-        {results.map(({ category, summary, items }) => (
-          <CategorySection key={category}>
-            <SectionTitle>{capitalizeAllWords(category)}</SectionTitle>
-            <div>
-  {summary.split(/\n\n+/).map((paragraph) => (
-    <Summary key={generateHash(paragraph)}>
-      {paragraph}
-    </Summary>
-  ))}
-</div>
+          <ResultsContainer onMouseUp={handleMouseUp}>
+            {results.map(({ category, summary, items }) => (
+              <CategorySection key={category}>
+                <SectionTitle>{capitalizeAllWords(category)}</SectionTitle>
+                <div>
+                  {summary.split(/\n\n+/).map((paragraph) => (
+                    <Summary key={generateHash(paragraph)}>
+                      {paragraph}
+                    </Summary>
+                  ))}
+                </div>
 
-            <SectionTitle2>Read The Full Article</SectionTitle2>
-            {items && items.length > 0 && (
-            
-              <FeedItems>
-                {items.map((feedItem) => {
-                  const itemKey = feedItem.link || feedItem.title;
-                  return (
-                    <FeedItem key={itemKey}>
-                      <FeedItemTitle>{feedItem.title}</FeedItemTitle>
-                      <FeedItemContent>{feedItem.content}</FeedItemContent>
-                      {feedItem.link && (
-                        <a
-                          href={feedItem.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ fontSize: "0.9rem", color: "#0066cc" }}
-                        >
-                          Read more
-                        </a>
-                      )}
-                    </FeedItem>
-                  );
-                })}
-              </FeedItems>
-            )}
-          </CategorySection>
-        ))}
-      </ResultsContainer>
-      <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-            Loading new category...
-          </div>
-      </PageContainer>
+                <SectionTitle2>Read The Full Article</SectionTitle2>
+                {items && items.length > 0 && (
+                  <FeedItems>
+                    {items.map((feedItem) => {
+                      const itemKey = feedItem.link || feedItem.title;
+                      return (
+                        <FeedItem key={itemKey}>
+                          <FeedItemTitle>{feedItem.title}</FeedItemTitle>
+                          <FeedItemContent>{feedItem.content}</FeedItemContent>
+                          {feedItem.link && (
+                            <a
+                              href={feedItem.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ fontSize: "0.9rem", color: "#0066cc" }}
+                            >
+                              Read more
+                            </a>
+                          )}
+                        </FeedItem>
+                      );
+                    })}
+                  </FeedItems>
+                )}
+              </CategorySection>
+            ))}
+          </ResultsContainer>
+          {loadingNewCategory && (
+            <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+              Loading new category...
+            </div>
+          )}
+
+{isChatOpen && (
+  <ChatBarContainer>
+    <ChatBarTitle>What do you want to know about this?</ChatBarTitle>
+    {/* Display the highlighted text as a reference */}
+    {highlightedText && (
+      <div style={{ marginBottom: '0.5rem', fontStyle: 'italic', color: '#ccc' }}>
+        "{highlightedText}"
+      </div>
     )}
-  </Sidebar>
-);
+    <ChatInputContainer onSubmit={handleChatSubmit}>
+      <ChatInput
+        placeholder="Ask a question..."
+        value={userQuery}
+        onChange={(e) => setUserQuery(e.target.value)}
+      />
+      <ChatSendButton type="submit">Send</ChatSendButton>
+    </ChatInputContainer>
+    {chatResponse && <ChatResponse>{chatResponse}</ChatResponse>}
+  </ChatBarContainer>
+)}
+
+        
+        </PageContainer>
+      )}
+    </Sidebar>
+  );
 }

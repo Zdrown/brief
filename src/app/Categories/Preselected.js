@@ -60,7 +60,9 @@ export default function Preselected() {
     { id: 1, title: "Technology", icon: "💻" },
     { id: 2, title: "Health", icon: "🩺" },
     { id: 3, title: "Sports", icon: "🏀" },
-    { id: 4, title: "Entertainment", icon: "🎬" },
+    { id: 4, title: "Entertainment", icon: "🎬"},
+    { id: 5, title: "WorldNews", icon: "📇" },
+    { id: 6, title: "Finance",  icon:"💵" },                              
   ];
 
   const [selectedCategories, setSelectedCategories] = useState([]);
