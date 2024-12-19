@@ -8,3 +8,4 @@ todo:
 -add new category from side bar and doesnt rerender but just adds the single catrgory 
 - get 99% resposne fidelity of articles 
 - is the request looping over found articles ? does it summarie more than once ?*****
+new note for git push
