@@ -26,6 +26,29 @@ const loadingBarAnim = keyframes`
   100% { transform: translateX(100%); }
 `;
 
+const PlayButton = styled.button`
+  background: none;
+  border: none;
+  color: ${({ theme }) => theme.backgrounds.secondary};
+  cursor: pointer;
+  font-size: 1.2rem;
+  margin-right: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+
+  &:hover {
+    color: ${({ theme }) => theme.colors.secondaryBlue};
+  }
+
+  &::before {
+    content: '▶';
+    display: inline-block;
+    font-size: 1.2rem;
+    vertical-align: middle;
+  }
+`;
+
 // ================ Styled Components ================ //
 
 // Outer container for the entire page
@@ -278,6 +301,140 @@ export default function FetchingPage() {
   const [today, setToday] = useState("");
   const [loadingNewCategory, setLoadingNewCategory] = useState(false);
 
+
+
+  // New function to fetch and play audio from the summary text
+ // State or refs
+ const [summariesAudio, setSummariesAudio] = useState({}); 
+ // summariesAudio will look like:
+ // {
+ //   [summaryText]: {
+ //      audio: HTMLAudioElement,
+ //      isLoaded: boolean,
+ //      isPlaying: boolean
+ //   }
+ // }
+ 
+ async function loadAudioForSummary(summaryText) {
+   const response = await fetch("/api/textToSpeech", {
+     method: "POST",
+     headers: { "Content-Type": "application/json" },
+     body: JSON.stringify({ text: summaryText })
+   });
+ 
+   if (!response.ok) {
+     console.error("Failed to fetch TTS audio");
+     return null;
+   }
+ 
+   const arrayBuffer = await response.arrayBuffer();
+   const blob = new Blob([new Uint8Array(arrayBuffer)], { type: 'audio/mp3' });
+   const audioURL = URL.createObjectURL(blob);
+   const audio = new Audio(audioURL);
+ 
+   return audio;
+ }
+ 
+ function toggleAudio(summaryText) {
+  setSummariesAudio(prev => {
+    const current = prev[summaryText];
+
+    // If no entry yet for this summary, create a placeholder entry
+    if (!current) {
+      return {
+        ...prev,
+        [summaryText]: {
+          audio: null,
+          isLoaded: false,
+          isPlaying: false
+        }
+      };
+    }
+    return prev;
+  });
+
+  const currentEntry = summariesAudio[summaryText];
+
+  if (!currentEntry || !currentEntry.isLoaded) {
+    // Need to load the audio
+    loadAudioForSummary(summaryText).then(audio => {
+      if (!audio) return; // failed to load
+
+      // Before playing this newly loaded audio, pause all others
+      setSummariesAudio(prev => {
+        // Pause any currently playing audio
+        for (const key of Object.keys(prev)) {
+          const entry = prev[key];
+          if (entry.isPlaying && key !== summaryText) {
+            entry.audio.pause();
+            entry.isPlaying = false;
+          }
+        }
+        return { ...prev };
+      });
+
+      audio.addEventListener('ended', () => {
+        setSummariesAudio(prev => ({
+          ...prev,
+          [summaryText]: {
+            ...prev[summaryText],
+            isPlaying: false
+          }
+        }));
+      });
+
+      // Play the newly loaded audio
+      audio.play().catch(err => console.error("Audio play failed:", err));
+      setSummariesAudio(prev => ({
+        ...prev,
+        [summaryText]: {
+          audio,
+          isLoaded: true,
+          isPlaying: true
+        }
+      }));
+    });
+  } else {
+    // Audio already loaded for this summary
+    const { audio, isPlaying } = summariesAudio[summaryText];
+    if (isPlaying) {
+      // Pause this one
+      audio.pause();
+      setSummariesAudio(prev => ({
+        ...prev,
+        [summaryText]: {
+          ...prev[summaryText],
+          isPlaying: false
+        }
+      }));
+    } else {
+      // Before playing this one, pause all others
+      setSummariesAudio(prev => {
+        for (const key of Object.keys(prev)) {
+          const entry = prev[key];
+          if (entry.isPlaying && key !== summaryText) {
+            entry.audio.pause();
+            entry.isPlaying = false;
+          }
+        }
+        return { ...prev };
+      });
+
+      // Now play this one
+      audio.play().catch(err => console.error("Audio play failed:", err));
+      setSummariesAudio(prev => ({
+        ...prev,
+        [summaryText]: {
+          ...prev[summaryText],
+          isPlaying: true
+        }
+      }));
+    }
+  }
+}
+
+ 
+
   // For chat bar
   const [highlightedText, setHighlightedText] = useState("");
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -529,6 +686,9 @@ export default function FetchingPage() {
             {results.map(({ category, summary, items }) => (
               <CategorySection key={category}>
                 <SectionTitle>{capitalizeAllWords(category)}</SectionTitle>
+                <PlayButton onClick={() => toggleAudio(summary)}>
+                    Play
+                  </PlayButton>
                 <div>
                   {summary.split(/\n\n+/).map((paragraph) => (
                     <Summary key={generateHash(paragraph)}>

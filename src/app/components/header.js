@@ -49,6 +49,9 @@ export default function Header() {
         <Link href="/">Home</Link> {/* Navigate to the root route */}
         <a href="#about">About</a>
         <a href="#contact">Contact</a>
+        <Link href="/authentication">Login</Link>
+        
+        
       </Nav>
     </HeaderWrapper>
   );
