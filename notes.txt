@@ -10,7 +10,7 @@ todo:
 -the websites change dimension when side bar is open 
 -hgilight text allows ai chatbot to ask questions - gemini (free)- gives paragraph as context and asks prompt
 -add new category from side bar and doesnt rerender but just adds the single catrgory 
-- get 99% resposne fidelity of articles 
+- get 99% resposne fidelity of articless
 - is the request looping over found articles ? does it summarie more than once ?*****
 new note for git push
 -have a thumbs up button on he category briefs, and this can inform links and also a bar that popa up to say why you liked it or dislked this and add to a prompt when asking for urls \\
