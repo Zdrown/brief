@@ -69,7 +69,7 @@ export default function HomePage() {
     <HomePageContainer>
       <Title>Welcome to brief.</Title>
       <Description>
-        brief. is your go-to application for concise and personalized updates. Get your daily briefings, manage categories, and stay informed effortlessly.
+        brief. Is your go-to application for concise and personalized updates. Get your daily briefings, manage categories, and stay informed effortlessly.
       </Description>
       
       <CallToAction onClick={handleNavigation}>

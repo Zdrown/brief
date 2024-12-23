@@ -1,5 +1,6 @@
 todo:
--voice continues after exit from news page, it should continue at the bottom with the ability to pause it 
+- change button to pause when paused , 
+-voice continues after exit from news page, it should continue at the bottom with the ability to pause it and skip to next 
 -login good , need to add reset link (where to go once redet link is sent)
 -work on sidebar which will be present on auth and non auth just look different add login to this 
 - record all resources used , wwebistes , info , password and credentials, record usuage periods and start dates 
@@ -13,6 +14,7 @@ todo:
 - get 99% resposne fidelity of articless
 - is the request looping over found articles ? does it summarie more than once ?*****
 new note for git push
+- adjust summary text so its always first letter capital and rest lower case of all wolds - had issue woth all caps 
 -have a thumbs up button on he category briefs, and this can inform links and also a bar that popa up to say why you liked it or dislked this and add to a prompt when asking for urls \\
 - loading screen with subject thungs the person selcted 
 - add like a take action or irl button on each actergory header nd link to lcoal things or way tp twak action in the relevant category. 
