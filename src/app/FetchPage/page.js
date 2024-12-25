@@ -6,6 +6,8 @@ import LocalStorageHelper from "../../../utils/localStorageHelper";
 import NProgress from "nprogress";
 import "nprogress/nprogress.css";
 import Sidebar from "../Sidebar/Sidebar";
+import PlayerBar from "../components/playerBar";
+import { FiPause, FiPlay } from "react-icons/fi";
 
 NProgress.configure({ showSpinner: false, speed: 400, minimum: 0.2 });
 
@@ -26,6 +28,14 @@ const loadingBarAnim = keyframes`
   100% { transform: translateX(100%); }
 `;
 
+const CategoryHeader = styled.div`
+  display: flex;
+  align-items: left
+  justify-content: space-between; 
+  margin-bottom: 1rem; /* Adjust spacing as needed */
+`;
+
+
 const PlayButton = styled.button`
   background: none;
   border: none;
@@ -35,18 +45,12 @@ const PlayButton = styled.button`
   margin-right: 1rem;
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
+  margin-top: -1vh;
 
   &:hover {
     color: ${({ theme }) => theme.colors.secondaryBlue};
   }
 
-  &::before {
-    content: '▶';
-    display: inline-block;
-    font-size: 1.2rem;
-    vertical-align: middle;
-  }
 `;
 
 // ================ Styled Components ================ //
@@ -300,140 +304,239 @@ export default function FetchingPage() {
   const [loading, setLoading] = useState(true);
   const [today, setToday] = useState("");
   const [loadingNewCategory, setLoadingNewCategory] = useState(false);
+  const [isPlayerBarVisible, setIsPlayerBarVisible] = useState(true);
 
 
 
   // New function to fetch and play audio from the summary text
  // State or refs
- const [summariesAudio, setSummariesAudio] = useState({}); 
- // summariesAudio will look like:
- // {
- //   [summaryText]: {
- //      audio: HTMLAudioElement,
- //      isLoaded: boolean,
- //      isPlaying: boolean
- //   }
- // }
- 
- async function loadAudioForSummary(summaryText) {
-   const response = await fetch("/api/textToSpeech", {
-     method: "POST",
-     headers: { "Content-Type": "application/json" },
-     body: JSON.stringify({ text: summaryText })
-   });
- 
-   if (!response.ok) {
-     console.error("Failed to fetch TTS audio");
-     return null;
-   }
- 
-   const arrayBuffer = await response.arrayBuffer();
-   const blob = new Blob([new Uint8Array(arrayBuffer)], { type: 'audio/mp3' });
-   const audioURL = URL.createObjectURL(blob);
-   const audio = new Audio(audioURL);
- 
-   return audio;
- }
- 
- function toggleAudio(summaryText) {
-  setSummariesAudio(prev => {
-    const current = prev[summaryText];
+ const [playerIndex, setPlayerIndex] = useState(0);        // which item is active
+ const [playerAudio, setPlayerAudio] = useState(null);     // the single Audio object
+ const [isPlayerAudioLoaded, setIsPlayerAudioLoaded] = useState(false);
+ const [isPlayerPlaying, setIsPlayerPlaying] = useState(false);
 
-    // If no entry yet for this summary, create a placeholder entry
-    if (!current) {
+
+ // =========== TTS Loader ===========
+ const [summariesAudio, setSummariesAudio] = useState({});
+ const isCurrentlyPlaying = summariesAudio[playerIndex]?.isPlaying ?? false;
+ const currentTime = summariesAudio[playerIndex]?.currentTime ?? 0;
+ const duration = summariesAudio[playerIndex]?.duration ?? 0;
+
+ // A “global” player index so the player bar knows which summary is active
+
+
+ // We can derive isPlayerPlaying from summariesAudio[playerIndex]?.isPlaying
+ // but for convenience, store a boolean to control the bar UI
+
+ // ======== LOAD AUDIO FUNCTION ========
+ async function loadAudioForSummary(summaryText) {
+  try {
+    const response = await fetch("/api/textToSpeech", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: summaryText }),
+    });
+    if (!response.ok) {
+      console.error("Failed to fetch TTS audio");
+      return null;
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const blob = new Blob([new Uint8Array(arrayBuffer)], { type: "audio/mp3" });
+    const audioURL = URL.createObjectURL(blob);
+
+    // Return a new Audio object
+    return new Audio(audioURL);
+  } catch (error) {
+    console.error("Error fetching audio:", error);
+    return null;
+  }
+}
+
+// ===================== Toggle Audio =====================
+function toggleAudio(index) {
+  // 1) Ensure an entry exists in summariesAudio for this index
+  setSummariesAudio((prev) => {
+    if (!prev[index]) {
       return {
         ...prev,
-        [summaryText]: {
+        [index]: {
           audio: null,
           isLoaded: false,
-          isPlaying: false
-        }
+          isPlaying: false,
+          currentTime: 0,
+          duration: 0,
+        },
       };
     }
     return prev;
   });
 
-  const currentEntry = summariesAudio[summaryText];
+  const currentEntry = summariesAudio[index];
 
+  // 2) If not loaded yet, fetch & play
   if (!currentEntry || !currentEntry.isLoaded) {
-    // Need to load the audio
-    loadAudioForSummary(summaryText).then(audio => {
-      if (!audio) return; // failed to load
+    const summaryText = results[index]?.summary;
+    if (!summaryText) return;
 
-      // Before playing this newly loaded audio, pause all others
-      setSummariesAudio(prev => {
-        // Pause any currently playing audio
-        for (const key of Object.keys(prev)) {
-          const entry = prev[key];
-          if (entry.isPlaying && key !== summaryText) {
-            entry.audio.pause();
-            entry.isPlaying = false;
-          }
-        }
-        return { ...prev };
-      });
+    // Load the audio
+    loadAudioForSummary(summaryText).then((audio) => {
+      if (!audio) return;
 
-      audio.addEventListener('ended', () => {
-        setSummariesAudio(prev => ({
+      // Pause all others first
+      pauseAllOthers(index);
+
+      // === Attach event listeners for time/duration tracking ===
+      audio.addEventListener("loadedmetadata", () => {
+        setSummariesAudio((prev) => ({
           ...prev,
-          [summaryText]: {
-            ...prev[summaryText],
-            isPlaying: false
-          }
+          [index]: {
+            ...prev[index],
+            duration: audio.duration,
+            currentTime: 0,
+          },
         }));
       });
 
-      // Play the newly loaded audio
-      audio.play().catch(err => console.error("Audio play failed:", err));
-      setSummariesAudio(prev => ({
+      audio.addEventListener("timeupdate", () => {
+        setSummariesAudio((prev) => ({
+          ...prev,
+          [index]: {
+            ...prev[index],
+            currentTime: audio.currentTime,
+          },
+        }));
+      });
+
+      audio.addEventListener("ended", () => {
+        setSummariesAudio((prev) => ({
+          ...prev,
+          [index]: {
+            ...prev[index],
+            isPlaying: false,
+            currentTime: 0, // optional reset
+          },
+        }));
+      });
+
+      // Play
+      audio.play().catch((err) => console.error("Audio play failed:", err));
+
+      // Update dictionary with new audio
+      setSummariesAudio((prev) => ({
         ...prev,
-        [summaryText]: {
+        [index]: {
           audio,
           isLoaded: true,
-          isPlaying: true
-        }
+          isPlaying: true,
+          currentTime: 0,
+          duration: 0, // will be updated by loadedmetadata
+        },
       }));
     });
   } else {
-    // Audio already loaded for this summary
-    const { audio, isPlaying } = summariesAudio[summaryText];
+    // 3) Audio is already loaded => just toggle
+    const { audio, isPlaying } = currentEntry;
+    if (!audio) return;
+
     if (isPlaying) {
-      // Pause this one
+      // Pause
       audio.pause();
-      setSummariesAudio(prev => ({
+      setSummariesAudio((prev) => ({
         ...prev,
-        [summaryText]: {
-          ...prev[summaryText],
-          isPlaying: false
-        }
+        [index]: {
+          ...prev[index],
+          isPlaying: false,
+        },
       }));
     } else {
-      // Before playing this one, pause all others
-      setSummariesAudio(prev => {
-        for (const key of Object.keys(prev)) {
-          const entry = prev[key];
-          if (entry.isPlaying && key !== summaryText) {
-            entry.audio.pause();
-            entry.isPlaying = false;
-          }
-        }
-        return { ...prev };
-      });
+      // Pause all others first
+      pauseAllOthers(index);
 
-      // Now play this one
-      audio.play().catch(err => console.error("Audio play failed:", err));
-      setSummariesAudio(prev => ({
+      // Play
+      audio.play().catch((err) => console.error("Audio play failed:", err));
+      setSummariesAudio((prev) => ({
         ...prev,
-        [summaryText]: {
-          ...prev[summaryText],
-          isPlaying: true
-        }
+        [index]: {
+          ...prev[index],
+          isPlaying: true,
+        },
       }));
     }
   }
 }
 
- 
+// ===================== Pause All Others =====================
+function pauseAllOthers(exceptIndex) {
+  setSummariesAudio((prev) => {
+    const newState = { ...prev };
+    for (const key of Object.keys(newState)) {
+      if (Number(key) !== exceptIndex && newState[key].isPlaying) {
+        newState[key].audio.pause();
+        newState[key].isPlaying = false;
+      }
+    }
+    return newState;
+  });
+}
+
+// ===================== Global Player Actions =====================
+
+// Called by the "Play/Pause" button on the global player bar
+function handlePlayPause() {
+  toggleAudio(playerIndex);
+}
+
+// Skip to Next summary
+function handleSkipNext() {
+  // Pause the current
+  pauseAllOthers(-1);
+
+  setPlayerIndex((prev) => {
+    const newIndex = prev + 1 >= results.length ? 0 : prev + 1;
+    setTimeout(() => toggleAudio(newIndex), 0);
+    return newIndex;
+  });
+}
+
+// Skip to Previous summary
+function handleSkipBack() {
+  // Pause the current
+  pauseAllOthers(-1);
+
+  setPlayerIndex((prev) => {
+    const newIndex = prev - 1 < 0 ? results.length - 1 : prev - 1;
+    setTimeout(() => toggleAudio(newIndex), 0);
+    return newIndex;
+  });
+}
+
+// ===================== Seeking (Progress Bar) =====================
+// Called when user drags the slider in your PlayerBar
+function handleSeek(newTime) {
+  const entry = summariesAudio[playerIndex];
+  if (!entry?.audio) return;
+
+  // 1) Set the Audio object's position
+  entry.audio.currentTime = newTime;
+
+  // 2) Update the dictionary so UI re-renders
+  setSummariesAudio((prev) => ({
+    ...prev,
+    [playerIndex]: {
+      ...prev[playerIndex],
+      currentTime: newTime,
+    },
+  }));
+}
+
+// ===================== Summary-Level Toggle =====================
+// Called when user clicks a "Play" button on a specific summary
+function handleSummaryToggle(index) {
+  setIsPlayerBarVisible(true); // show global bar if hidden
+  setPlayerIndex(index);       // mark this summary as the active one
+  toggleAudio(index);          // actually toggle audio playback
+}
 
   // For chat bar
   const [highlightedText, setHighlightedText] = useState("");
@@ -683,12 +786,16 @@ export default function FetchingPage() {
           </ActionButtonsContainer>
 
           <ResultsContainer onMouseUp={handleMouseUp}>
-            {results.map(({ category, summary, items }) => (
-              <CategorySection key={category}>
-                <SectionTitle>{capitalizeAllWords(category)}</SectionTitle>
-                <PlayButton onClick={() => toggleAudio(summary)}>
-                    Play
-                  </PlayButton>
+          {results.map(({ category, summary, items }, index) => (
+  <CategorySection key={category}>
+     <CategoryHeader>
+    <SectionTitle>{capitalizeAllWords(category)}</SectionTitle>
+    
+    <PlayButton onClick={() => handleSummaryToggle(index)}>
+  {summariesAudio[index]?.isPlaying ? <FiPause /> : <FiPlay />}
+</PlayButton>
+    </CategoryHeader>
+    
                 <div>
                   {summary.split(/\n\n+/).map((paragraph) => (
                     <Summary key={generateHash(paragraph)}>
@@ -750,8 +857,19 @@ export default function FetchingPage() {
     {chatResponse && <ChatResponse>{chatResponse}</ChatResponse>}
   </ChatBarContainer>
 )}
-
-        
+  {isPlayerBarVisible && (
+        <PlayerBar
+          title={results[playerIndex]?.category || "No Category"}
+          isPlaying={isCurrentlyPlaying}
+          currentTime={currentTime}
+          duration={duration}
+          onPlayPause={handlePlayPause}
+          onSkipBack={handleSkipBack}
+          onSkipNext={handleSkipNext}
+          onSeek={handleSeek}
+          onClose={() => setIsPlayerBarVisible(false)}
+        />
+      )}
         </PageContainer>
       )}
     </Sidebar>

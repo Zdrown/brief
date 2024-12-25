@@ -1,7 +1,8 @@
 todo:
 - change button to pause when paused , 
--voice continues after exit from news page, it should continue at the bottom with the ability to pause it and skip to next 
+-voice continues after exit from news page, it should continue at the bottom with the ability to pause it and skip to next , add picure from some free model based on the category title 
 -login good , need to add reset link (where to go once redet link is sent)
+-share brief directly on the brief 
 -work on sidebar which will be present on auth and non auth just look different add login to this 
 - record all resources used , wwebistes , info , password and credentials, record usuage periods and start dates 
 -like this brief to know whayt rss feeds you like in a category

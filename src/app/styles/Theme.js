@@ -5,6 +5,7 @@ const Theme = {
       darkBlue: '#22333B',       // Dark blue
       lightGray: '#F2F4F3',      // Light grayish white
       tan: '#A9927D',            // Tan/brown color
+      tanRGB: '169, 146, 125',   //rgb value for opacity
       darkBrown: '#5E503F',      // Dark brown
     },
     backgrounds: {
