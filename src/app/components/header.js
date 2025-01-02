@@ -10,6 +10,7 @@ const HeaderWrapper = styled.header`
   background-color: ${({ theme }) => theme.colors.darkBlue};
   color: ${({ theme }) => theme.text.primary};
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
 `;
 
 const Logo = styled.div`

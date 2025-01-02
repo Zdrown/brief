@@ -1,8 +1,15 @@
 todo:
 - change button to pause when paused , 
+-rrender button on each category 
+- find a way to have unique ids for the articles beyond title and or fallback of link- , dont rely on index in cse if deletes , 
+-find way to w=spped fetch times up and get google sumamary for articles in single summary 
+-main page like eleven labs then on get started in goes into the app wiht the sidebar 
+-design signed in dashboard 
 -voice continues after exit from news page, it should continue at the bottom with the ability to pause it and skip to next , add picure from some free model based on the category title 
 -login good , need to add reset link (where to go once redet link is sent)
 -share brief directly on the brief 
+-get comntent fot he briefs 
+-hambeurger style header drop down for mobile 
 -work on sidebar which will be present on auth and non auth just look different add login to this 
 - record all resources used , wwebistes , info , password and credentials, record usuage periods and start dates 
 -like this brief to know whayt rss feeds you like in a category

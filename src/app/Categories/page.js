@@ -29,12 +29,12 @@ const ContentWrapper = styled.div`
   position: relative; /* Needed for positioning the close icon */
   background-color: ${({ theme }) => theme.colors.errorBg};
   color: ${({ theme }) => theme.colors.errorText};
-  border: 1px solid ${({ theme }) => theme.colors.errorBorder};
+  border: 2px solid ${({ theme }) => theme.colors.errorBorder};
   padding: 1rem;
-  border-radius: 4px;
+  border-radius: 2px;
   margin-bottom: 1rem;
   font-weight: bold;
-  max-width: 600px;
+  max-width: 300px;
   margin: 1rem auto; /* Center it horizontally if desired */
 `;
 
@@ -108,13 +108,14 @@ export default function Categories() {
   };
   return (
     <CategoriesContainer>
-      <h1>Categories</h1>
-      {error && (
-        <ErrorMessage
+           {error && (
+      <ErrorMessage
           message={error}
           onClose={() => setError("")} // Clear error on close
         />
-      )}
+         )}
+      <h1>Categories</h1>
+
       <ContentWrapper>
         <Section>
           <Preselected />

@@ -193,7 +193,16 @@ export default function PlayerBar({
     const seconds = Math.floor(secondsTotal % 60).toString().padStart(2, "0");
     return `${minutes}:${seconds}`;
   }
-
+  function capitalizeAllWords(str) {
+    if (!str) return "";
+    return str
+      .split(" ")
+      .map((word) =>
+        word.charAt(0).toUpperCase() + word.slice(1)
+      )
+      .join(" ");
+  }
+  
   const handleSliderChange = (e) => {
     const newTime = Number.parseFloat(e.target.value);
     onSeek?.(newTime);
@@ -202,7 +211,7 @@ export default function PlayerBar({
   return (
     <PlayerBarWrapper>
       {/* Row 1: Title */}
-      <TitleRow>{title}</TitleRow>
+      <TitleRow>{capitalizeAllWords(title)}</TitleRow>
 
       {/* Row 2: Controls + Slider + Close */}
       <ControlsRow>

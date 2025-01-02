@@ -6,15 +6,7 @@ import ActionButtons from '../components/Actionbuttons(breifpage)/Actionbuttons'
 import LocalStorageHelper from '../../../utils/localStorageHelper';
 import React from 'react';
 
-// Capitalize function
-const capitalizeAllWords = (str) => {
-  if (!str) return "";
-  return str
-    .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(" ");
-};
-
+// -------------- STYLED COMPONENTS --------------
 const SidebarWrapper = styled.div`
   position: fixed;
   top: 0;
@@ -57,23 +49,8 @@ const SidebarContent = styled.div`
   transform: translateX(${({ $isOpen }) => ($isOpen ? '0' : '-100%')});
   transition: transform 0.3s ease;
   box-shadow: ${({ $isOpen }) => ($isOpen ? '0 0 20px rgba(0, 0, 0, 0.1)' : 'none')};
-  padding: 1rem 2rem 2rem
+  padding: 1rem 2rem 2rem;
   overflow-y: auto;
-  
-
-  /* Scrollbar styling */
-  &::-webkit-scrollbar {
-    width: 8px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background-color: ${({ theme }) => theme.colors.darkBlue};
-    border-radius: 4px;
-  }
 `;
 
 const CategoryList = styled.div`
@@ -81,11 +58,26 @@ const CategoryList = styled.div`
   flex-direction: column;
   gap: 1.2rem;
   margin-top: 1rem;
+`;
+const DeleteButton = styled.button`
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color:${({ theme }) => theme.colors.darkBlue};
+ font-size: 1.5rem;
+  cursor: pointer;
   
+  }
 `;
 
 const CategoryItem = styled.div`
+  position: flex;
+  align-items: center;
   padding: 1.2rem 1.5rem;
+  justify-content: space-between;
   background-color: ${({ theme }) => theme.backgrounds.secondary};
   border-radius: 8px;
   color: ${({ theme }) => theme.colors.darkBlue};
@@ -99,30 +91,46 @@ const CategoryItem = styled.div`
     transform: translateX(5px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   }
+      ${DeleteButton} {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease-in-out;
+  }
+
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.tan};
+    transform: translateX(5px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+
+    // Show the delete button on hover
+    ${DeleteButton} {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
 `;
+
+
 
 const MainContentWrapper = styled.div`
   transition: margin-left 0.3s ease;
   margin-left: ${({ $isOpen }) => ($isOpen ? '20rem' : '0')};
   width: ${({ $isOpen }) => ($isOpen ? 'calc(100% - 20rem)' : '100%')};
- 
 `;
 
 const SidebarTitle = styled.h2`
   font-size: 1.8rem;
-  color:${({ theme }) => theme.backgrounds.secondary};
+  color: ${({ theme }) => theme.backgrounds.secondary};
   margin-bottom: 2rem;
   padding-bottom: 0.8rem;
   border-bottom: 2px solid ${({ theme }) => theme.backgrounds.secondary};
   font-weight: 600;
-  
 `;
 
 const InputContainer = styled.div`
   margin-top: 2rem;
   display: flex;
   gap: 0.5rem;
-  
 `;
 
 const Input = styled.input`
@@ -147,7 +155,8 @@ const AddButton = styled.button`
   cursor: pointer;
   font-family: inherit;
   font-weight: 500;
-  width: 100
+  width: 3vw;
+  font-size: 1rem;
   transition: background-color 0.3s ease;
 
   &:hover {
@@ -160,9 +169,17 @@ const AddButton = styled.button`
   }
 `;
 
-const generateCategoryKey = (category) => {
-  return `category-${category.toLowerCase().replace(/\s+/g, '-')}`;
-};
+// -------------- UTILS --------------
+function capitalizeAllWords(str) {
+  if (!str) return "";
+  return str
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}
+
+const generateCategoryKey = (title) =>
+  `category-${title.toLowerCase().replace(/\s+/g, '-')}`;
 
 // Helper functions for emoji fetch
 async function fetchEmoji(title) {
@@ -186,23 +203,58 @@ function isSingleEmoji(str) {
   return emojiRegex.test(str.trim());
 }
 
+// -------------- COMPONENT --------------
 const Sidebar = ({ children, results, onNewCategoryAdded }) => {
   const [isOpen, setIsOpen] = useState(false);
+
+  /**
+   * Initialize local state with a combined array of objects:
+   * {
+   *   title: string,
+   *   icon: string (only for self-selected),
+   *   isPreselected: boolean
+   * }
+   */
   const [categories, setCategories] = useState(() => {
-    const preselected = JSON.parse(localStorage.getItem('preselectedCategories')) || [];
-    const selfSelected = JSON.parse(localStorage.getItem('selfSelectedCategories')) || [];
-    return [...preselected, ...selfSelected.map(cat => cat.title)];
+    // Preselected categories are stored as an array of strings
+    const preselected = LocalStorageHelper.getPreselectedCategories(); // e.g. ["Tech", "Sports"]
+    
+    // Self-selected categories are stored as an array of objects
+    // e.g. [{ id: 123, title: "My Category", icon: "📝" }]
+    const selfSelected = LocalStorageHelper.getSelfSelectedCategories();
+
+    // Convert preselected array of strings -> array of objects with isPreselected = true
+    const preselectedObjects = preselected.map((catTitle) => ({
+      title: catTitle,
+      // You may not have an icon for preselected, so we can store a default or empty
+      icon: "", 
+      isPreselected: true,
+    }));
+
+    // For self selected, just attach isPreselected: false
+    const selfSelectedObjects = selfSelected.map((catObj) => ({
+      ...catObj,
+      isPreselected: false,
+    }));
+
+    // Merge them into a single array
+    return [...preselectedObjects, ...selfSelectedObjects];
   });
+
   const [newCategory, setNewCategory] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const childrenWithProps = React.Children.map(children, child => {
+  // If children is a function, we pass it a "sidebarOpen" prop; otherwise, we clone
+  const childrenWithProps = React.Children.map(children, (child) => {
     if (React.isValidElement(child)) {
       return React.cloneElement(child, { sidebarOpen: isOpen });
     }
     return child;
   });
 
+  /**
+   * Add a new category to "self-selected"
+   */
   async function handleAddCategory() {
     if (!newCategory.trim()) return;
     setIsLoading(true);
@@ -211,84 +263,117 @@ const Sidebar = ({ children, results, onNewCategoryAdded }) => {
     const fallbackEmoji = "📝";
     const validEmoji = isSingleEmoji(emoji) ? emoji : fallbackEmoji;
 
-    // Save to self selected
+    // Build a new object for self-selected
+    const newCatObject = { 
+      id: Date.now(), 
+      title: newCategory, 
+      icon: validEmoji,
+      isPreselected: false,
+    };
+
+    // Save to local storage (self-selected array)
     const existingSelfSelected = LocalStorageHelper.getSelfSelectedCategories() || [];
-    const newCatObject = { id: Date.now(), title: newCategory, icon: validEmoji };
     const updatedSelfSelected = [...existingSelfSelected, newCatObject];
     LocalStorageHelper.saveSelfSelectedCategories(updatedSelfSelected);
 
-    // Update local categories state
-    setCategories(prev => [...prev, newCategory]);
+    // Update local state
+    setCategories((prev) => [...prev, newCatObject]);
 
-    // Reset input and loading
+    // Reset input / loading
     setNewCategory("");
     setIsLoading(false);
 
-    // Trigger the parent's function to fetch RSS items for the new category
+    // Trigger parent's callback, if provided
     if (typeof onNewCategoryAdded === 'function') {
       onNewCategoryAdded(newCategory);
     }
   }
 
+  /**
+   * Delete a category from both the UI state and localStorage.
+   * We check the `isPreselected` flag to see where it should be removed.
+   */
+  function handleDeleteCategory(catObj) {
+    const { title, isPreselected } = catObj;
+
+    // 1) Remove from local state
+    setCategories((prev) => prev.filter((c) => c.title !== title));
+
+    // 2) Remove from localStorage
+    if (isPreselected) {
+      // It's from the preselected array (strings)
+      const existingPreselected = LocalStorageHelper.getPreselectedCategories();
+      const updatedPreselected = existingPreselected.filter((catTitle) => catTitle !== title);
+      LocalStorageHelper.savePreselectedCategories(updatedPreselected);
+    } else {
+      // It's from self-selected array (objects)
+      const existingSelfSelected = LocalStorageHelper.getSelfSelectedCategories();
+      const updatedSelfSelected = existingSelfSelected.filter((item) => item.title !== title);
+      LocalStorageHelper.saveSelfSelectedCategories(updatedSelfSelected);
+    }
+  }
+
   return (
     <>
-     <SidebarWrapper>
-  <MenuButton $isOpen={isOpen} onClick={() => setIsOpen(!isOpen)}>
-    {isOpen ? <X size={24} /> : <Menu size={24} />}
-  </MenuButton>
-  
-  <SidebarContent $isOpen={isOpen} style={{
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%',
-    padding: '1rem 2rem 2rem' // Reduced top padding
-  }}> 
+      <SidebarWrapper>
+        <MenuButton $isOpen={isOpen} onClick={() => setIsOpen(!isOpen)}>
+          {isOpen ? <X size={24} /> : <Menu size={24} />}
+        </MenuButton>
 
+        <SidebarContent
+          $isOpen={isOpen}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+            padding: '1rem 2rem 2rem'
+          }}
+        >
+          <SidebarTitle style={{ marginTop: '1rem' }}>
+            Selected Categories
+          </SidebarTitle>
 
+          <InputContainer style={{ marginTop: '0.5rem', marginBottom: '0.5rem' }}>
+            <Input
+              type="text"
+              placeholder="Add category..."
+              value={newCategory}
+              onChange={(e) => setNewCategory(e.target.value)}
+            />
+            <AddButton
+              onClick={handleAddCategory}
+              disabled={isLoading || !newCategory.trim()}
+            >
+              {isLoading ? "..." : "Add"}
+            </AddButton>
+          </InputContainer>
 
-   
-    <SidebarTitle style={{ marginTop: '1rem' }}>Selected Categories</SidebarTitle>
-    
-    <InputContainer style={{ marginTop: '0.5rem', marginBottom: '0.5rem' }}> 
-      <Input
-        type="text"
-        placeholder="Add category..."
-        value={newCategory}
-        onChange={(e) => setNewCategory(e.target.value)}
-      />
-      <AddButton onClick={handleAddCategory} disabled={isLoading || !newCategory.trim()}>
-        {isLoading ? "..." : "Add"}
-      </AddButton>
-    </InputContainer>
-    
-    {/* Scrollable area */}
-    <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '5rem' }}>
-  <CategoryList>
-    {categories.map((category) => (
-      <CategoryItem key={generateCategoryKey(category)}>
-        {capitalizeAllWords(category)}
-      </CategoryItem>
-    ))}
-  </CategoryList>
-</div>
-    {/* Fixed section at the bottom for action buttons */}
-   
+          {/* Scrollable area */}
+          <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '5rem' }}>
+            <CategoryList>
+              {categories.map((catObj) => (
+                <CategoryItem key={generateCategoryKey(catObj.title)}>
+                 {catObj.icon && `${catObj.icon} `} 
+                  {capitalizeAllWords(catObj.title)}
 
+                  <DeleteButton onClick={() => handleDeleteCategory(catObj)}>
+                    &times;
+                  </DeleteButton>
+                </CategoryItem>
+              ))}
+            </CategoryList>
+          </div>
 
-    <div style={{ marginTop: '1rem' }}>
-      <ActionButtons results={results} $isOpen={isOpen} />
-    </div>
+          {/* Bottom section for action buttons (like 'Save' or 'Publish') */}
+          <div style={{ marginTop: '1rem' }}>
+            <ActionButtons results={results} $isOpen={isOpen} />
+          </div>
+        </SidebarContent>
+      </SidebarWrapper>
 
-   
-  </SidebarContent>
-  
-</SidebarWrapper>
-
-
-<MainContentWrapper $isOpen={isOpen}>
-  {typeof children === 'function' ? children({ sidebarOpen: isOpen }) : childrenWithProps}
-</MainContentWrapper>
-
+      <MainContentWrapper $isOpen={isOpen}>
+        {typeof children === 'function' ? children({ sidebarOpen: isOpen }) : childrenWithProps}
+      </MainContentWrapper>
     </>
   );
 };

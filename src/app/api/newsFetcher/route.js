@@ -70,23 +70,18 @@ async function fetchRssFeeds(feedUrls = [], category = "") {
       if (allItems.length >= MAX_ITEMS_TOTAL) break;
   
       // Extract and sanitize content here.
-      const rawContent = item.contentSnippet || item.content || "";
+      const rawContent = item.content || item.contentSnippet || "";
       const cleanedContent = rawContent.replace(/\n+/g, ' ').trim();
-  
-      // Split into sentences by period and trim whitespace.
-      // Note: This is a naive approach and may not be perfect for all cases,
-      // but it provides a basic way to limit the content to two sentences.
+      
+      // Two-sentence preview
       const sentences = cleanedContent.split('.').map(s => s.trim()).filter(Boolean);
-  
-      // Take only the first two sentences if available.
       const firstTwoSentences = sentences.slice(0, 2);
-  
-      // Recombine them into a single string. If we got two sentences, add a period at the end.
       const shortenedContent = firstTwoSentences.join('. ') + (firstTwoSentences.length === 2 ? '.' : '');
-  
+      
       allItems.push({
         ...item,
-        content: shortenedContent, // Now only the first two sentences are shown
+        fullContent: cleanedContent,        // Keep the full cleaned content
+        previewContent: shortenedContent,    // The two-sentence version
       });
     }
     if (allItems.length >= MAX_ITEMS_TOTAL) break;
@@ -110,7 +105,7 @@ async function generateSummary(items = [], category = "") {
   Create a comprehensive summary of these RSS feed items about "${category}":
   ${items.map(item => `
   Title: ${item.title}
-  Content: ${item.content}
+  Content: ${item.fullContent}
   Source: ${item.source}
   PubDate: ${item.pubDate}
   `).join("\n\n")}
@@ -122,7 +117,9 @@ async function generateSummary(items = [], category = "") {
   4. Maintains proper context
   5. Uses only text and punctuation and no other symbols.
   6. Doesnt refrence the rss feed but treats these a one summary covering recent state of news for this category.
-  7.5. Is written in well-separated paragraphs, each focusing on a specific idea or theme.
+  7. Is written in well-separated paragraphs, each focusing on a specific idea or theme.
+  8. Is thorough and covers the topics enough while being succint. 
+
   `;
 
   try {
@@ -158,7 +155,7 @@ async function suggestRssFeeds(category = "") {
       3. Each must be unique and relevant to "${category}".
       4. Output only the feed URLs, separated by a single comma, with no extra text or formatting.
       Example output: https://example.com/rss,https://another.com/feed,https://third.com/feed
-      5. If topic is or contains the words ai or ai models use https://rss.beehiiv.com/feeds/2R3C6Bt5wj.xml as one of the three urls. Do not use this for topics like computer science or closely relates subjects. 
+      5. If topic is or contains the words "ai" or "ai models" use https://rss.beehiiv.com/feeds/2R3C6Bt5wj.xml as one of the three URLs. Do not use this for topics like computer science or closely relates subjects. 
     `;
   try {
     const response = await openai.chat.completions.create({
@@ -260,17 +257,26 @@ export async function POST(req) {
     console.log(`Found ${feedItems.length} relevant items for '${category}', generating summary...`);
     const summary = await generateSummary(feedItems, category);
 
+    const finalItems = feedItems.map(item => ({
+      title: item.title,
+      link: item.link,
+      pubDate: item.pubDate,
+      source: item.source,
+      // The front end wants `content`, so we put previewContent here:
+      content: item.previewContent  
+    }));
+
     // 3. Return final JSON
     const finalResponse = {
-      summary,
-      items: feedItems,
+      summary,     // <-- The long “global” summary
+      items: finalItems, // <-- Each item has only 2-sentence `content`
       metadata: {
         feedsCount: rssFeedUrls.length,
-        itemsFound: feedItems.length,
+        itemsFound: finalItems.length,
         timestamp: new Date().toISOString(),
         category,
-        sourceType,
-      },
+        sourceType
+      }
     };
 
     console.log("Final JSON payload:", finalResponse);

@@ -24,3 +24,21 @@ export default function RootLayout({ children }) {
     </html>
   );
 }
+
+/*export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>
+      <StyledComponentsRegistry>
+        <ThemeProvider theme={Theme}>
+          <GlobalStyles /> {/* Apply global styles 
+          <Header />
+          <main>{children}</main>
+          <Footer />
+        </ThemeProvider>
+      </StyledComponentsRegistry>
+      </body>
+    </html>
+  );
+}
+*/

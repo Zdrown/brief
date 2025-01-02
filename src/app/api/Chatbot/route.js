@@ -19,7 +19,7 @@ export async function POST(req) {
       {
         parts: [
           {
-            text: `The user wants to know ${query} about ${highlightedText}. Please provide a helpful, concise answer.`
+            text: `The user wants to know ${query} about ${highlightedText}. Please provide a helpful, concise answer; if the information the user wants is not in the text do your best to provide a helpful, concise answer .`
           },
         ],
       },

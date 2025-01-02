@@ -100,26 +100,43 @@ import { useState, useEffect } from "react";
 import styled from "styled-components";
 import LocalStorageHelper from "../../../utils/localStorageHelper";
 
+/* Wraps the entire section */
 const SectionWrapper = styled.div`
-  margin-bottom: 2rem;
+  margin-top: -3.5rem;
+
 `;
 
+/* New container that wraps the Title, Form, and Divider together */
+const HeaderContainer = styled.div`
+  /* Adjust margins/padding to align with "Select Categories" on the left. */
+  margin-top: 0;          /* If you need to move it upward, set a negative value here, e.g. -0.5rem */
+  margin-bottom: 1rem;    /* Spacing below the divider, tweak as needed */
+`;
+
+/* Title (no bottom border) */
 const SectionTitle = styled.h2`
   font-size: 1.5rem;
   font-weight: bold;
-  margin-bottom: 1rem;
-  border-bottom: 2px solid #e0e0e0;
-  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem; /* Pulls the search bar closer */
   color: ${({ theme }) => theme.colors.darkBlue};
 `;
 
+/* Search bar container */
 const FormContainer = styled.div`
   display: flex;
   gap: 1rem;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.25rem; /* Minimal gap before the divider */
 `;
 
+/* Divider (the single gray line) */
+const Divider = styled.hr`
+  margin: 0;
+  border: none;
+  border-top: 2px solid #e0e0e0;
+`;
+
+/* Input styling */
 const Input = styled.input`
   padding: 0.5rem 1rem;
   border: 1px solid ${({ theme }) => theme.colors.darkBlue};
@@ -132,6 +149,7 @@ const Input = styled.input`
   }
 `;
 
+/* Add button styling */
 const Button = styled.button`
   padding: 0.5rem 1rem;
   background-color: ${({ theme }) => theme.colors.darkBlue};
@@ -153,10 +171,15 @@ const Button = styled.button`
   }
 `;
 
+/* The grid of category cards */
 const CardGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1.5rem;
+  /* If you want this narrower/centered:
+     max-width: 600px;
+     margin: 0 auto;
+  */
 `;
 
 const DeleteButton = styled.button`
@@ -267,18 +290,26 @@ export default function SelfSelected() {
 
   return (
     <SectionWrapper>
-      <SectionTitle>Stay Updated On What Moves You</SectionTitle>
-      <FormContainer>
-        <Input
-          type="text"
-          placeholder="Enter a category..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-        />
-        <Button onClick={handleAddCategory} disabled={loading}>
-          {loading ? "Loading..." : "Add"}
-        </Button>
-      </FormContainer>
+      {/* Wrap the title, search bar, and divider together */}
+      <HeaderContainer>
+        <SectionTitle>Stay Updated On What Moves You</SectionTitle>
+
+        <FormContainer>
+          <Input
+            type="text"
+            placeholder="Enter a category..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+          />
+          <Button onClick={handleAddCategory} disabled={loading}>
+            {loading ? "Loading..." : "Add"}
+          </Button>
+        </FormContainer>
+
+        <Divider />
+      </HeaderContainer>
+
+      {/* Category Cards */}
       {categories.length === 0 ? (
         <p style={{ textAlign: "center", color: "#aaa" }}>
           Add categories to see them here.

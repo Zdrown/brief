@@ -48,7 +48,7 @@ const PlayButton = styled.button`
   margin-top: -1vh;
 
   &:hover {
-    color: ${({ theme }) => theme.colors.secondaryBlue};
+   color: ${({ theme }) => theme.colors.secondaryBlue};
   }
 
 `;
@@ -304,7 +304,7 @@ export default function FetchingPage() {
   const [loading, setLoading] = useState(true);
   const [today, setToday] = useState("");
   const [loadingNewCategory, setLoadingNewCategory] = useState(false);
-  const [isPlayerBarVisible, setIsPlayerBarVisible] = useState(true);
+  const [isPlayerBarVisible, setIsPlayerBarVisible] = useState(false);
 
 
 
@@ -808,7 +808,7 @@ function handleSummaryToggle(index) {
                 {items && items.length > 0 && (
                   <FeedItems>
                     {items.map((feedItem) => {
-                      const itemKey = feedItem.link || feedItem.title;
+                      const itemKey = feedItem.title-index || feedItem.link
                       return (
                         <FeedItem key={itemKey}>
                           <FeedItemTitle>{feedItem.title}</FeedItemTitle>

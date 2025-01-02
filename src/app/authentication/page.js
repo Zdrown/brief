@@ -9,11 +9,33 @@ import { useRouter } from 'next/navigation'
 const Container = styled.div`
   max-width: 400px;
   margin: 100px auto;
-  padding: 2rem;
+  padding: 3rem;
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 `
+const HeroSection = styled.section`
+  position: relative;
+  width: 100%;
+  height: 15vh; /* or min-height: 400px; */
+  overflow: hidden;
+`;
+
+const VideoBackground = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+
+  video {
+    width: 110%;
+    height: 100%;
+    object-fit: cover;
+  }
+`;
+
 
 // Title (Login / Sign Up)
 const Title = styled.h2`
@@ -114,6 +136,17 @@ export default function LoginPage() {
   }
 
   return (
+    <>
+    <HeroSection>
+      <VideoBackground>
+        <video autoPlay muted loop>
+          <source src="/BriefVideo2.mp4" type="video/mp4" />
+        </video>
+      </VideoBackground>
+      {/* Title or other elements can be layered above if you like */}
+    </HeroSection>
+
+
     <Container>
       <Title>{isSignUp ? 'Sign Up' : 'Login'}</Title>
       
@@ -158,5 +191,7 @@ export default function LoginPage() {
         </ToggleButton>
       </InfoParagraph>
     </Container>
+
+    </>
   )
 }

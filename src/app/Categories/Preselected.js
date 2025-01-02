@@ -23,12 +23,14 @@ const CardGrid = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1.5rem;
 `;
-
 const Card = styled.div`
+  /* If $isSelected is true => same as hover (background tan, text darkBlue)
+     Else => background darkBlue, text is white/light */
   background-color: ${({ theme, $isSelected }) =>
     $isSelected ? theme.colors.tan : theme.colors.darkBlue};
   color: ${({ theme, $isSelected }) =>
     $isSelected ? theme.colors.darkBlue : theme.text.primary};
+
   padding: 1rem;
   border-radius: 8px;
   text-align: center;
@@ -36,12 +38,14 @@ const Card = styled.div`
   transition: background-color 0.3s ease, color 0.3s ease, transform 0.3s ease;
 
   &:hover {
+    /* On hover, do the same style as if it's selected */
     background-color: ${({ theme }) => theme.colors.tan};
     color: ${({ theme }) => theme.colors.darkBlue};
     transform: translateY(-5px);
     box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
   }
 `;
+
 
 const Emoji = styled.div`
   font-size: 2.5rem;
@@ -53,6 +57,7 @@ const Title = styled.h3`
   font-weight: bold;
   margin: 0;
   text-transform: capitalize;
+ 
 `;
 
 export default function Preselected() {

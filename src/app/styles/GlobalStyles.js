@@ -27,7 +27,8 @@ const GlobalStyles = createGlobalStyle`
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-  }
+}
+
 
   header, footer {
     background-color: ${Theme.colors.tan}; // Optional for header/footer
@@ -37,6 +38,7 @@ const GlobalStyles = createGlobalStyle`
     justify-content: center;
     align-items: center;
   }
+
 
   a {
     color: ${Theme.colors.lightGray}; // Link color using light gray
@@ -52,10 +54,40 @@ const GlobalStyles = createGlobalStyle`
     width: 90%;
     max-width: 1200px;
     margin: 0 auto;
+
+      @media (max-width: ${Theme.breakpoints.tablet}) {
+      width: 95%;
+      max-width: 600px;
+    }
+    @media (max-width: ${Theme.breakpoints.mobile}) {
+      max-width: 400px;
+    }
+  }
+
+  /* ========== Utility Class: Flex Row ========== */
+  .flex-row {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+
+    /* Switch to column on narrower screens */
+    @media (max-width: ${Theme.breakpoints.tablet}) {
+      flex-direction: column;
+    }
+  }
+     /* ========== Utility Class: Grid Layout ========== */
+  .grid-2col {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+
+    @media (max-width: ${Theme.breakpoints.tablet}) {
+      grid-template-columns: 1fr;
+    }
   }
 
   /* Typography */
-  h1, h2, h3, h4, h5, h6 {
+  h1, h2, h4, h5, h6 {
     color: ${Theme.text.secondary};
     margin: 1rem 0;
   }
